@@ -51,7 +51,7 @@ ExplorerWelcome.NamespaceExtension ─── named pipe ─►  ExplorerWelcome.
                                                separate process client
 ```
 
-The native host uses the system XAML Island API and leaves the root XAML element on `ElementTheme::Default`, so the Windows theme remains the source of truth. The broker is current-user-only and accepts a versioned JSON-lines protocol. The heavy client consumes the same contract and is the place for future search, indexing, AI, network, and richer dashboard work.
+The native host uses the system XAML Island API and leaves the root XAML element on `ElementTheme::Default`, so the Windows theme remains the source of truth. The broker is current-user-only and accepts a versioned JSON-lines protocol. The current shell has the V2 visual sections, validated folder/Settings actions, and an asynchronous snapshot refresh that reports updated, stale, or offline state without blocking Explorer. The heavy client consumes the same contract and is the place for future search, indexing, AI, network, and richer dashboard work.
 
 ## Projects
 
@@ -190,7 +190,7 @@ Terminal 2:
 pwsh -NoProfile -File .\scripts\run-heavy-app.ps1
 ```
 
-Then launch the native host from Visual Studio or the architecture-specific output folder. The native card can send a bounded `host.ping` to the broker; it does not perform heavy data work on the shell-facing path. The same card is hosted by the Namespace Extension when the controlled Explorer test is registered.
+Then launch the native host from Visual Studio or the architecture-specific output folder. The native card can send bounded `host.ping`, snapshot, folder, and documented Settings requests to the broker; snapshot collection and action launching stay outside the shell-facing path. The same card is hosted by the Namespace Extension when the controlled Explorer test is registered.
 
 ## What this POC does not prove yet
 

@@ -6,11 +6,13 @@
 
 #include <functional>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.UI.h>
+#include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
@@ -28,6 +30,30 @@ using namespace winrt::Windows::UI::Xaml::Shapes;
 using namespace winrt::Windows::UI::Xaml::Media::Imaging;
 
 using ActionCallback = std::function<void(std::wstring const& action, std::wstring const& target)>;
+using SnapshotCallback = std::function<bool(std::wstring& summary)>;
+
+inline void RunSnapshotRefreshAsync(
+    winrt::Windows::UI::Xaml::Controls::TextBlock const& status,
+    SnapshotCallback const& snapshot)
+{
+    auto dispatcher = status.Dispatcher();
+    std::thread([status, dispatcher, snapshot]
+    {
+        std::wstring summary;
+        const bool available = snapshot && snapshot(summary);
+        if (summary.empty())
+        {
+            summary = available ? L"Snapshot aggiornato" : L"Broker non disponibile · dati locali mantenuti";
+        }
+
+        dispatcher.RunAsync(
+            winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
+            [status, available, summary]
+            {
+                status.Text(winrt::hstring(summary));
+            });
+    }).detach();
+}
 
 inline winrt::Windows::UI::Xaml::Controls::TextBlock MakeText(
     winrt::hstring const& value,
@@ -178,7 +204,8 @@ inline winrt::Windows::UI::Xaml::Controls::Border MakeListCard(
 inline winrt::Windows::UI::Xaml::UIElement BuildWelcomePage(
     std::function<bool()> const& pingBroker,
     ActionCallback const& action,
-    std::wstring const& wallpaperPath = {})
+    std::wstring const& wallpaperPath = {},
+    SnapshotCallback const& snapshot = {})
 {
     auto root = Grid();
     root.RequestedTheme(ElementTheme::Default);
@@ -337,9 +364,19 @@ inline winrt::Windows::UI::Xaml::UIElement BuildWelcomePage(
     retry.Content(winrt::box_value(L"Aggiorna dati"));
     retry.HorizontalAlignment(HorizontalAlignment::Left);
     retry.MinHeight(40);
-    retry.Click([status, pingBroker](auto const&, auto const&)
+    retry.Click([status, pingBroker, snapshot](auto const&, auto const&)
     {
-        status.Text(pingBroker && pingBroker() ? L"Broker raggiungibile · refresh richiesto" : L"Broker non disponibile · dati locali mantenuti");
+        status.Text(L"Aggiornamento in corso…");
+        if (snapshot)
+        {
+            RunSnapshotRefreshAsync(status, snapshot);
+        }
+        else
+        {
+            status.Text(pingBroker && pingBroker()
+                ? L"Broker raggiungibile · snapshot non configurato"
+                : L"Broker non disponibile · dati locali mantenuti");
+        }
     });
     page.Children().Append(retry);
 

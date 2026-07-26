@@ -27,3 +27,9 @@ Completed work is recorded here with date and validation evidence. Open work sta
 - Added wallpaper-aware hero fallback, resource cards, storage cards, network/recent/highlighted/terminal sections, quick Settings links, and bounded button actions.
 - Native buttons now send protocol-v2 action requests through the current-user named pipe; no context-menu interfaces were added.
 - x64 and ARM64 Release builds passed, followed by the broker + HeavyApp snapshot smoke test.
+
+## 2026-07-27 — Explorer Home V2 async refresh boundary
+
+- Added a non-blocking snapshot refresh callback shared by the standalone host and Namespace Extension.
+- Broker work runs outside the XAML/Explorer callback thread and reports updated, stale, or offline state back through the XAML dispatcher.
+- Native refresh requests use protocol-v2 correlation IDs and preserve cached visual content when the broker is unavailable.

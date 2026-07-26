@@ -13,7 +13,7 @@
 - [x] Add bounded broker collectors for machine identity, metrics, storage, network locations, recent items, tools, terminals, quick settings, and preferences.
 - [ ] Validate a supported Windows-backed Quick Access/Favorites enumeration path.
 - [x] Implement the official V2 visual shell in the standalone host and Namespace Extension.
-- [ ] Add asynchronous snapshot refresh and offline/stale UI states to the native view.
+- [x] Add asynchronous snapshot refresh and offline/stale UI states to the native view.
 - [x] Add validated folder and settings action requests from the native view; terminal launch remains catalog-only.
 - [ ] Validate whether a public API can guarantee opening a folder in a new Explorer tab.
 - [ ] Add manifest/MSIX registration after the per-user prototype is proven.

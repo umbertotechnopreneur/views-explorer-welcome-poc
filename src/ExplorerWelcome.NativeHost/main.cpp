@@ -106,6 +106,30 @@ bool PingBroker()
         response) && response.find("host.pong") != std::string::npos;
 }
 
+bool RequestSnapshot(std::wstring& summary)
+{
+    std::string response;
+    const bool received = SendBrokerRequest(
+        R"({"version":2,"type":"snapshot.request","correlationId":"native-host-snapshot"})",
+        response);
+    if (!received)
+    {
+        summary = L"Broker offline · dati locali mantenuti";
+        return false;
+    }
+
+    if (response.find("snapshot.response") != std::string::npos)
+    {
+        summary = L"Snapshot aggiornato dal broker";
+        return true;
+    }
+
+    summary = response.find("snapshot.stale") != std::string::npos
+        ? L"Snapshot stale · dati locali mantenuti"
+        : L"Snapshot non disponibile · dati locali mantenuti";
+    return false;
+}
+
 void LaunchBrokerAction(std::wstring const& action, std::wstring const& target)
 {
     const std::string request =
@@ -235,7 +259,9 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand)
             [](std::wstring const& action, std::wstring const& target)
             {
                 LaunchBrokerAction(action, target);
-            }));
+            },
+            {},
+            RequestSnapshot));
 
         ShowWindow(window, showCommand);
         UpdateWindow(window);
