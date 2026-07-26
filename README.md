@@ -8,6 +8,24 @@ This is a feasibility study, not a production Explorer replacement. The current 
 
 The repository's Windows CI builds the managed projects and the native host for both x64 and ARM64, then runs a redacted working-tree secret scan.
 
+## Recommended Explorer integration path
+
+For a real new entry under `This PC`, the compatible Shell model is a minimal
+native COM Namespace Extension DLL implementing the Shell folder contracts and
+keeping every Explorer callback fast. The DLL should be a thin UI boundary;
+slow work and the richer dashboard remain in the out-of-process broker and
+HeavyApp through the versioned named pipe.
+
+The current XAML host is an executable and is deliberately not registered in
+Explorer. Use [scripts/register-explorer-component.ps1](scripts/register-explorer-component.ps1)
+only when a real Namespace Extension DLL exists. The script is per-user,
+reversible, refuses `.exe` files, and refreshes the Shell association cache.
+
+For production packaging, prefer manifest-based COM registration in an MSIX or
+sparse package. If the desired surface is only a context-menu action, use a
+packaged `IExplorerCommand` instead; it is not a replacement for a custom
+`This PC` folder view.
+
 ## Architecture
 
 ```text

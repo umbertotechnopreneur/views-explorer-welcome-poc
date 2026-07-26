@@ -5,8 +5,10 @@
 - [x] Confirm the native host builds and starts on x64.
 - [x] Confirm the native host builds on ARM64.
 - [x] Run the broker/client smoke test on the local checkout.
-- [ ] Decide whether the next Explorer experiment is a Namespace Extension, a packaged `IExplorerCommand`, or another supported surface.
+- [x] Decide that the next Explorer experiment is a native COM Namespace Extension; keep packaged `IExplorerCommand` as the context-menu alternative.
 - [ ] Prototype a real Explorer-hosted boundary only after the standalone XAML Island host is stable.
+- [ ] Implement a minimal native COM Namespace Extension DLL before using `scripts/register-explorer-component.ps1`.
+- [ ] Add manifest/MSIX registration after the per-user prototype is proven.
 
 ## Completed
 
