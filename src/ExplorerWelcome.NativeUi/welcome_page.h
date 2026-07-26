@@ -1,7 +1,17 @@
-// -----------------------------------------------------------------------------
-// Views Explorer Welcome POC
-// Shared WinRT XAML visual shell for the standalone host and Shell view.
-// -----------------------------------------------------------------------------
+/* =============================================================================
+ * Views Explorer Welcome POC
+ * File: src/ExplorerWelcome.NativeUi/welcome_page.h
+ * Purpose: Shared WinRT XAML visual shell for the standalone host and Shell view.
+ *
+ * Copyright (c) 2026 Umberto Giacobbi
+ * Author: Umberto Giacobbi
+ * Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+ * License: PolyForm Noncommercial License 1.0.0
+ * SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+ * Open source: https://umbertogiacobbi.biz/opensource
+ * =============================================================================
+ */
+
 #pragma once
 
 #include <algorithm>

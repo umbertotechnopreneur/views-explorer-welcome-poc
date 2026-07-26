@@ -1,4 +1,19 @@
 <#
+===============================================================================
+Views Explorer Welcome POC
+File: scripts/register-explorer-component.ps1
+Purpose: Register or unregister a per-user Explorer Namespace Extension prototype.
+
+Copyright (c) 2026 Umberto Giacobbi
+Author: Umberto Giacobbi
+Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+License: PolyForm Noncommercial License 1.0.0
+SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+Open source: https://umbertogiacobbi.biz/opensource
+===============================================================================
+#>
+
+<#
 .SYNOPSIS
   Register or unregister a per-user Explorer Namespace Extension prototype.
 

@@ -1,4 +1,19 @@
 <#
+===============================================================================
+Views Explorer Welcome POC
+File: scripts/validate-signing-boundary.ps1
+Purpose: Validate that signing secrets stay outside Git and password handling stays out of artifact signing.
+
+Copyright (c) 2026 Umberto Giacobbi
+Author: Umberto Giacobbi
+Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+License: PolyForm Noncommercial License 1.0.0
+SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+Open source: https://umbertogiacobbi.biz/opensource
+===============================================================================
+#>
+
+<#
 .SYNOPSIS
   Validate that signing secrets stay outside Git and password handling stays out of artifact signing.
 #>

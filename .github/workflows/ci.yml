@@ -15,6 +15,10 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
+      - name: Verify source banners
+        shell: pwsh
+        run: pwsh -NoProfile -File .\scripts\manage-source-banners.ps1 -Action Verify -NoProgress
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:

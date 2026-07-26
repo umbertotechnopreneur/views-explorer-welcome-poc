@@ -1,7 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Versioned, bounded named-pipe contract for the Explorer Home V2 dashboard.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.Contracts/PipeContracts.cs
+// Purpose: Versioned, bounded named-pipe contract for the Explorer Home V2 dashboard.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 namespace ExplorerWelcome.Contracts;
 
 public static class PipeProtocol

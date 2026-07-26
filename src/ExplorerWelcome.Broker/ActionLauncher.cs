@@ -1,7 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Strict, identifier-based activation adapters executed outside Explorer.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.Broker/ActionLauncher.cs
+// Purpose: Strict, identifier-based activation adapters executed outside Explorer.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 using System.Diagnostics;
 using ExplorerWelcome.Contracts;
 

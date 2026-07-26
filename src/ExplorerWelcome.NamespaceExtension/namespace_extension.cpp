@@ -1,8 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Minimal native Shell Namespace Extension with a system-themed XAML Island.
-// No context-menu handler is implemented. Slow work remains out of process.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.NamespaceExtension/namespace_extension.cpp
+// Purpose: Minimal native Shell Namespace Extension with a system-themed XAML Island. No context-menu handler is implemented. Slow work remains out of process.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 #include <windows.h>
 #include <shlobj.h>
 #include <shobjidl.h>

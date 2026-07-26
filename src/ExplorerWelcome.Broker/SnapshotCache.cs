@@ -1,7 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Small recoverable current-user cache for the last valid dashboard snapshot.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.Broker/SnapshotCache.cs
+// Purpose: Small recoverable current-user cache for the last valid dashboard snapshot.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 using System.Text.Json;
 using ExplorerWelcome.Contracts;
 

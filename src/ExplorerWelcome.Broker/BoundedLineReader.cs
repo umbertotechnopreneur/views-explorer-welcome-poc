@@ -1,7 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Bounded text framing for the current-user named-pipe protocol.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.Broker/BoundedLineReader.cs
+// Purpose: Bounded text framing for the current-user named-pipe protocol.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 using System.Text;
 
 namespace ExplorerWelcome.Broker;

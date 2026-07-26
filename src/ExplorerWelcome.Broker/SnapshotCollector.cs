@@ -1,7 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Bounded, best-effort Windows snapshot collection for Explorer Home V2.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.Broker/SnapshotCollector.cs
+// Purpose: Bounded, best-effort Windows snapshot collection for Explorer Home V2.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 using Microsoft.Win32;
 using System.Diagnostics;
 using System.Net;

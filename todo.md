@@ -45,6 +45,8 @@
 - [x] Add a hidden 50-cycle native XAML create/teardown smoke test.
 - [x] Add static validation for forbidden Shell/menu/heavy-work and hover
   patterns.
+- [x] Add one menu-driven and CLI-compatible source-banner manager, migrate all
+  owned C#/PowerShell/C/C++ files, and enforce it in CI.
 - [ ] Run the full manual Explorer compatibility, DPI, High Contrast, Narrator,
   restart, and leak matrix on supported Windows builds.
 
@@ -70,6 +72,8 @@
   tracked and the artifact signer accepts no password input.
 - Branding/header asset validation — 6/6 reusable language templates contain
   the required placeholders, license fields, and canonical open-source URL.
+- Source-banner verification — 30/30 owned source files valid; a second apply
+  planned and updated 0 files.
 - `pwsh -NoProfile -File .\scripts\secret-scan.ps1` — no likely secret patterns.
 - GitHub Actions run `30212826308` — passed managed, native x64, native ARM64, and secret scan.
 - Explorer Home V2 specification and single official mockup added under `docs/explorer-home-v2/`.

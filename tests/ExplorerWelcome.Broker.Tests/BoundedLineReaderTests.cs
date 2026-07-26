@@ -1,3 +1,16 @@
+// =============================================================================
+// Views Explorer Welcome POC
+// File: tests/ExplorerWelcome.Broker.Tests/BoundedLineReaderTests.cs
+// Purpose: Defines B o u n d e d L i n e R e a d e r T e s t s behavior for the Views Explorer Welcome POC.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 using ExplorerWelcome.Broker;
 using Xunit;
 

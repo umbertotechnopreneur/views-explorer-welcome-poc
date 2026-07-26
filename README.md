@@ -174,6 +174,7 @@ has been inspected.
 
   ```powershell
   pwsh -NoProfile -File .\scripts\preflight.ps1
+  pwsh -NoProfile -File .\scripts\manage-source-banners.ps1 -Action Verify -NoProgress
   pwsh -NoProfile -Command "dotnet test .\tests\ExplorerWelcome.Broker.Tests\ExplorerWelcome.Broker.Tests.csproj --configuration Release"
   pwsh -NoProfile -File .\scripts\stress-native-host.ps1 -Architecture x64 -Configuration Release
   pwsh -NoProfile -File .\scripts\validate-boundaries.ps1
@@ -183,6 +184,10 @@ has been inspected.
   pwsh -NoProfile -Command "git diff --check"
   ```
 
+- Run `scripts\manage-source-banners.ps1` without parameters for its menu. Use
+  `-Action Preview` before applying headers to new files and `-Action Apply
+  -Confirm:$false` for non-interactive updates. See
+  [the scripts guide](scripts/README.md#source-banners).
 - Inspect the COM boundary when needed:
 
   ```powershell

@@ -40,3 +40,14 @@
   use native `WinVerifyTrust` and reject every other nonzero result.
 - Lexical path containment is insufficient for a signing tool. Reject reparse
   points so a repository path cannot redirect SignTool to an external file.
+
+## 2026-07-27 — Source identity must be executable policy
+
+- A shared asset library is useful for people, but a public repository must
+  carry its own standalone enforcement tool so clones and CI do not depend on
+  a workstation-specific path.
+- Treat banner maintenance as a reversible migration: preview first, replace
+  only recognized legacy or canonical blocks, preserve encoding/newlines, and
+  make a second apply a zero-change operation.
+- Exclude generated, build, vendor, dependency, and reparse-point paths before
+  any write; verify the same owned-file set in CI.

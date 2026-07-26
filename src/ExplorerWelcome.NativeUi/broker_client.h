@@ -1,7 +1,17 @@
-// -----------------------------------------------------------------------------
-// Views Explorer Welcome POC
-// Bounded native named-pipe client shared by the standalone and Explorer hosts.
-// -----------------------------------------------------------------------------
+/* =============================================================================
+ * Views Explorer Welcome POC
+ * File: src/ExplorerWelcome.NativeUi/broker_client.h
+ * Purpose: Bounded native named-pipe client shared by the standalone and Explorer hosts.
+ *
+ * Copyright (c) 2026 Umberto Giacobbi
+ * Author: Umberto Giacobbi
+ * Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+ * License: PolyForm Noncommercial License 1.0.0
+ * SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+ * Open source: https://umbertogiacobbi.biz/opensource
+ * =============================================================================
+ */
+
 #pragma once
 
 #include <windows.h>

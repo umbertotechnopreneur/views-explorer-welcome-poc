@@ -1,7 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Separate heavy-app seam used to validate the named-pipe contract.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.HeavyApp/Program.cs
+// Purpose: Separate heavy-app seam used to validate the named-pipe contract.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 using System.IO.Pipes;
 using System.Text.Json;
 using ExplorerWelcome.Contracts;

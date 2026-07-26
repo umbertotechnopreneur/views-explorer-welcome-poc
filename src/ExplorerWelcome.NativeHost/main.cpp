@@ -1,8 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Lightweight Win32/C++/WinRT host for a system-themed XAML Island.
-// The host owns only the shell-facing surface; heavy work stays out of process.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.NativeHost/main.cpp
+// Purpose: Lightweight Win32/C++/WinRT host for a system-themed XAML Island. The host owns only the shell-facing surface; heavy work stays out of process.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 #include <windows.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 

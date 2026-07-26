@@ -1,4 +1,19 @@
 <#
+===============================================================================
+Views Explorer Welcome POC
+File: scripts/validate-boundaries.ps1
+Purpose: Enforce static safety boundaries for the Explorer-facing native code.
+
+Copyright (c) 2026 Umberto Giacobbi
+Author: Umberto Giacobbi
+Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+License: PolyForm Noncommercial License 1.0.0
+SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+Open source: https://umbertogiacobbi.biz/opensource
+===============================================================================
+#>
+
+<#
 .SYNOPSIS
   Enforce static safety boundaries for the Explorer-facing native code.
 #>

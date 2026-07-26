@@ -9,6 +9,24 @@ pwsh -NoProfile -File .\scripts\validate-signing-boundary.ps1
 pwsh -NoProfile -File .\scripts\secret-scan.ps1
 ```
 
+## Source banners
+
+`manage-source-banners.ps1` is the single repository-local tool for C#,
+PowerShell, C, and C++ source headers. Run it without parameters for the menu,
+or select an action explicitly for tools and CI:
+
+```powershell
+pwsh -NoProfile -File .\scripts\manage-source-banners.ps1
+pwsh -NoProfile -File .\scripts\manage-source-banners.ps1 -Action Preview -NoProgress
+pwsh -NoProfile -File .\scripts\manage-source-banners.ps1 -Action Apply -NoProgress -Confirm:$false
+pwsh -NoProfile -File .\scripts\manage-source-banners.ps1 -Action Verify -NoProgress
+```
+
+`Remove` deletes only an exact canonical banner produced by this tool. The
+scanner stays inside the repository, skips reparse points and
+generated/build/vendor paths, preserves common source encodings and newline
+style, and migrates the earlier short POC banner.
+
 ## Development signing
 
 Signing secrets remain outside the repository under the encrypted workstation

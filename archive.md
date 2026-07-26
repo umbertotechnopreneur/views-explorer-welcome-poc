@@ -110,3 +110,14 @@ Completed work is recorded here with date and validation evidence. Open work sta
 - Created and independently validated a companion local asset library with
   source-header templates for C#, PowerShell, C, C++, `.h`, and `.hpp`; no
   private Views App code or endpoint was copied.
+
+## 2026-07-27 — Unified source-banner manager
+
+- Added one standalone `manage-source-banners.ps1` entry point with an
+  interactive no-argument menu and explicit Preview, Apply, Verify, and Remove
+  actions for tools and automation.
+- Migrated every owned C#, PowerShell, C, and C++ file to the canonical project,
+  author, repository, noncommercial license, SPDX, and open-source identity.
+- Preserved common encodings and newline styles, excluded generated/build/vendor
+  and reparse-point paths, verified 30/30 files, and enforced verification in
+  Windows CI.

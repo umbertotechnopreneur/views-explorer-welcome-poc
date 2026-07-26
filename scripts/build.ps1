@@ -1,4 +1,19 @@
 <#
+===============================================================================
+Views Explorer Welcome POC
+File: scripts/build.ps1
+Purpose: Build managed projects and the native XAML host for one explicit architecture.
+
+Copyright (c) 2026 Umberto Giacobbi
+Author: Umberto Giacobbi
+Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+License: PolyForm Noncommercial License 1.0.0
+SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+Open source: https://umbertogiacobbi.biz/opensource
+===============================================================================
+#>
+
+<#
 .SYNOPSIS
   Build managed projects and the native XAML host for one explicit architecture.
 #>

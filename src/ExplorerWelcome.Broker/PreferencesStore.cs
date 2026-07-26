@@ -1,7 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Current-user, versioned, recoverable preferences for Explorer Home V2.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.Broker/PreferencesStore.cs
+// Purpose: Current-user, versioned, recoverable preferences for Explorer Home V2.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 using System.Text.Json;
 using ExplorerWelcome.Contracts;
 

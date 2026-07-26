@@ -1,7 +1,17 @@
-// -----------------------------------------------------------------------------
-// Views Explorer Welcome POC
-// Compact native projection of the versioned broker snapshot.
-// -----------------------------------------------------------------------------
+/* =============================================================================
+ * Views Explorer Welcome POC
+ * File: src/ExplorerWelcome.NativeUi/dashboard_snapshot.h
+ * Purpose: Compact native projection of the versioned broker snapshot.
+ *
+ * Copyright (c) 2026 Umberto Giacobbi
+ * Author: Umberto Giacobbi
+ * Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+ * License: PolyForm Noncommercial License 1.0.0
+ * SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+ * Open source: https://umbertogiacobbi.biz/opensource
+ * =============================================================================
+ */
+
 #pragma once
 
 #include <algorithm>

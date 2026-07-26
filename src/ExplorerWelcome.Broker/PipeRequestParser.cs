@@ -1,7 +1,16 @@
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Views Explorer Welcome POC
-// Pure, bounded request parsing kept separate from named-pipe I/O.
-// -----------------------------------------------------------------------------
+// File: src/ExplorerWelcome.Broker/PipeRequestParser.cs
+// Purpose: Pure, bounded request parsing kept separate from named-pipe I/O.
+//
+// Copyright (c) 2026 Umberto Giacobbi
+// Author: Umberto Giacobbi
+// Repository: https://github.com/umbertotechnopreneur/views-explorer-welcome-poc
+// License: PolyForm Noncommercial License 1.0.0
+// SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// Open source: https://umbertogiacobbi.biz/opensource
+// =============================================================================
+
 using System.Text.Json;
 using ExplorerWelcome.Contracts;
 
