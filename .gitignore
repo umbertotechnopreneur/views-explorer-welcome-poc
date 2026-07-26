@@ -1,0 +1,35 @@
+# Visual Studio / .NET / native build output
+.vs/
+bin/
+obj/
+out/
+x64/
+ARM64/
+Debug/
+Release/
+*.user
+*.suo
+*.pdb
+*.ilk
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local.json
+*.user.json
+*.key
+*.pfx
+*.p12
+*.pem
+*.crt
+
+# Generated reports and logs
+artifacts/
+logs/
+*.log
+
+# OS / editor files
+Thumbs.db
+Desktop.ini
+.DS_Store

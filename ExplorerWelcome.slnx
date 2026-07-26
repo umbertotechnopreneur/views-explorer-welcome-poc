@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ExplorerWelcome.Broker/ExplorerWelcome.Broker.csproj" />
+    <Project Path="src/ExplorerWelcome.Contracts/ExplorerWelcome.Contracts.csproj" />
+    <Project Path="src/ExplorerWelcome.HeavyApp/ExplorerWelcome.HeavyApp.csproj" />
+    <Project Path="src/ExplorerWelcome.NativeHost/ExplorerWelcome.NativeHost.vcxproj" />
+  </Folder>
+</Solution>
