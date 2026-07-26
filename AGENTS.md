@@ -15,6 +15,8 @@ This repository is a public feasibility study for a Windows 11-quality welcome p
 
 - Use `pwsh -NoProfile` for every PowerShell command or script launched by an agent.
 - Read the root `README.md`, `SECURITY.md`, `IP_PROVENANCE.md`, and `PUBLICATION_CHECKLIST.md` before changing publication-facing files.
+- Follow `docs/BRANDING.md` for canonical identity, terminology, claim levels,
+  and public wording.
 - Keep all source and documentation in English; user discussion may be Italian.
 - Preserve unrelated changes and never commit secrets, private paths, generated output, or copied assets with unknown provenance.
 - Keep pipe messages versioned, current-user-only, bounded, and explicit about unsupported requests.

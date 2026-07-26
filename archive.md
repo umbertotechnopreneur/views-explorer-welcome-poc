@@ -81,3 +81,32 @@ Completed work is recorded here with date and validation evidence. Open work sta
 - Added accessible names for metric and storage progress bars plus a polite
   live dashboard status.
 - The hidden native host stress mode passed 50 XAML create/teardown cycles.
+
+## 2026-07-27 — Vault-backed development signing
+
+- Added a development certificate manager that creates or imports a
+  password-protected PFX from the encrypted external Vault using a
+  DPAPI-protected `PSCredential`.
+- Added x64/ARM64 artifact signing and verification by public thumbprint from
+  `CurrentUser\My`; the signer accepts no PFX path, password, or secret input.
+- Added a static signing-boundary check that fails if private signing material
+  exists anywhere in the working tree or if secret-handling commands enter the
+  artifact-signing path.
+- Generated a local self-signed RSA 3072/SHA-256 development certificate,
+  replaced its store key with a non-exportable copy, signed the four native
+  Release artifacts, and verified their expected signer.
+- The development certificate was not added to `Root` or `TrustedPublisher`;
+  production public-trust identity and RFC 3161 timestamping remain open.
+- Negative tests rejected a changed Authenticode payload, a missing or
+  unexpected signer, a repository-local Vault, ignored PFX material, and a
+  reparse-point path to an external artifact.
+
+## 2026-07-27 — Public wording and reusable source identity
+
+- Added a canonical branding guide for project identity, editorial voice,
+  Explorer terminology, evidence levels, and reusable README wording.
+- Aligned the README, contributor guidance, agent rules, and notices with the
+  canonical public open-source reference.
+- Created and independently validated a companion local asset library with
+  source-header templates for C#, PowerShell, C, C++, `.h`, and `.hpp`; no
+  private Views App code or endpoint was copied.

@@ -28,6 +28,14 @@
   for standalone/out-of-process components.
 - [ ] Prototype a classic signed installer with architecture-matched COM and
   Shell namespace registration, rollback, and clean uninstall.
+- [x] Add a Vault-backed, DPAPI-protected development certificate workflow
+  without repository or command-line secrets.
+- [x] Sign and verify the native x64/ARM64 development artifacts by certificate
+  store thumbprint.
+- [x] Define the public project voice, terminology, claim levels, and reusable
+  README wording.
+- [ ] Select and authorize the production public-trust signing identity,
+  timestamp authority, and CI signing service.
 - [x] Guard late XAML dispatcher callbacks after view destruction and coalesce
   concurrent refreshes/actions.
 - [x] Add bounded malformed-message, depth, correlation, and argument tests.
@@ -58,6 +66,10 @@
 - Native XAML lifetime smoke — 50/50 hidden create/teardown cycles passed on
   x64 Release.
 - Static Explorer boundary validation — passed locally.
+- Signing boundary validation — passed locally; no private signing material is
+  tracked and the artifact signer accepts no password input.
+- Branding/header asset validation — 6/6 reusable language templates contain
+  the required placeholders, license fields, and canonical open-source URL.
 - `pwsh -NoProfile -File .\scripts\secret-scan.ps1` — no likely secret patterns.
 - GitHub Actions run `30212826308` — passed managed, native x64, native ARM64, and secret scan.
 - Explorer Home V2 specification and single official mockup added under `docs/explorer-home-v2/`.

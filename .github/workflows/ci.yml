@@ -54,6 +54,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File .\scripts\validate-boundaries.ps1
 
+      - name: Validate signing boundary
+        shell: pwsh
+        run: pwsh -NoProfile -File .\scripts\validate-signing-boundary.ps1
+
       - name: Secret-pattern scan
         shell: pwsh
         run: pwsh -NoProfile -File .\scripts\secret-scan.ps1

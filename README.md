@@ -2,7 +2,10 @@
 
 > Windows 11-quality welcome page feasibility study
 
-This repository explores whether a small native Win32/C++/WinRT XAML Island can provide a beautiful, theme-aware welcome surface for File Explorer while heavier functionality remains in a separate process reached through named pipes.
+Views Explorer Welcome POC is a public feasibility study for a Windows
+11-quality welcome surface in File Explorer. It explores a thin native
+Explorer-facing boundary while snapshots, orchestration, and other heavier
+work remain in an out-of-process broker reached through a versioned named pipe.
 
 This is a feasibility study, not a production Explorer replacement. The
 default workflow keeps Explorer unregistered; the controlled Namespace
@@ -77,6 +80,11 @@ pwsh -NoProfile -File .\scripts\build.ps1 -Architecture ARM64
 ```
 
 The native project targets Windows SDK `10.0.26100.0` and MSVC `v145` when that toolset is available. The script fails clearly if the requested native toolchain is missing.
+
+Local development signing uses a self-signed certificate whose password-
+protected PFX and DPAPI credential remain in the encrypted external Vault.
+The repository receives only scripts and documentation, never the private key
+or password. See [signing and secret handling](docs/SIGNING.md).
 
 ## Getting started
 
@@ -169,6 +177,7 @@ has been inspected.
   pwsh -NoProfile -Command "dotnet test .\tests\ExplorerWelcome.Broker.Tests\ExplorerWelcome.Broker.Tests.csproj --configuration Release"
   pwsh -NoProfile -File .\scripts\stress-native-host.ps1 -Architecture x64 -Configuration Release
   pwsh -NoProfile -File .\scripts\validate-boundaries.ps1
+  pwsh -NoProfile -File .\scripts\validate-signing-boundary.ps1
   pwsh -NoProfile -File .\scripts\secret-scan.ps1
   pwsh -NoProfile -Command "gitleaks detect --source . --redact --no-banner"
   pwsh -NoProfile -Command "git diff --check"
@@ -207,13 +216,19 @@ Then launch the native host from Visual Studio or the architecture-specific outp
   enterprise servicing model. MSIX in-process Shell Extension deployment has
   been closed as unsupported; the identity-only external-location template is
   not an Explorer registration mechanism.
-- Production accessibility, signing, telemetry, search/indexing, or enterprise servicing.
+- Production public-trust signing, accessibility, telemetry, search/indexing,
+  or enterprise servicing. Local development signing is implemented but is not
+  a distribution identity.
 
 Those are explicit next experiments after the host and pipe contract are stable.
 
 ## License
 
 Source code is released under the [PolyForm Noncommercial License 1.0.0](LICENSE). Commercial use, commercial distribution, or embedding in a commercial product requires separate written authorization from the copyright holder. Third-party components and assets remain under their own licenses.
+
+Project voice and terminology are defined in [the branding guide](docs/BRANDING.md).
+Licensing and other public work by Umberto Giacobbi are available at
+[umbertogiacobbi.biz/opensource](https://umbertogiacobbi.biz/opensource).
 
 ## AI assistance
 

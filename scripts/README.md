@@ -5,8 +5,28 @@ Run every script with `pwsh -NoProfile`.
 ```powershell
 pwsh -NoProfile -File .\scripts\preflight.ps1
 pwsh -NoProfile -File .\scripts\build.ps1 -Architecture x64
+pwsh -NoProfile -File .\scripts\validate-signing-boundary.ps1
 pwsh -NoProfile -File .\scripts\secret-scan.ps1
 ```
+
+## Development signing
+
+Signing secrets remain outside the repository under the encrypted workstation
+Vault. `manage-signing-certificate.ps1` creates or imports the development
+profile without trusting it. `sign-artifacts.ps1` accepts only a public
+thumbprint and selects the private key from `CurrentUser\My`; it has no password
+parameter.
+
+Both scripts open an interactive menu without arguments and support explicit
+actions for tools and automation:
+
+```powershell
+pwsh -NoProfile -File .\scripts\manage-signing-certificate.ps1 -Action Status
+pwsh -NoProfile -File .\scripts\sign-artifacts.ps1 -Action Verify -Architecture All
+```
+
+See [the signing guide](../docs/SIGNING.md) before creating or importing a
+certificate.
 
 ## Explorer registration prototype
 

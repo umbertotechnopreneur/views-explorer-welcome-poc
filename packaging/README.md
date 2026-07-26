@@ -28,6 +28,11 @@ CLSID and `This PC` namespace junction, start the broker outside Explorer, and
 remove every owned registration during uninstall. The current PowerShell
 registration script remains a development tool, not the production installer.
 
+Signing is a separate boundary. Development PFX and DPAPI credential files stay
+in the encrypted external Vault and are never installer inputs committed to
+Git. Build artifacts are signed from the Windows certificate store by public
+thumbprint. See [the signing guide](../docs/SIGNING.md).
+
 ## Build the identity-only package
 
 The template uses placeholder development identity values and is unsigned. It

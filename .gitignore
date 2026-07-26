@@ -23,6 +23,10 @@ Release/
 *.p12
 *.pem
 *.crt
+*.cer
+*.pvk
+*.snk
+*.credential.xml
 
 # Generated reports and logs
 artifacts/

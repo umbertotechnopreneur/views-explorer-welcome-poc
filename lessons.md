@@ -26,3 +26,17 @@
   label does not automatically give its progress bar an accessible name.
 - A post-read message-size check is not a memory bound. Enforce the limit while
   reading the pipe and time out connected clients that do not finish a request.
+- A DPAPI `PSCredential` is bound to its Windows user and machine even when the
+  containing Vault is synchronized. Re-wrap the PFX password independently on
+  every authorized workstation.
+- Keep certificate management and artifact signing separate. The management
+  path may import a Vault credential, while the signer should accept only a
+  public thumbprint and use the Windows certificate store.
+- A self-signed development signature proves signer continuity and detects
+  modification, but it is not a public trust chain and must not be silently
+  installed into trusted certificate stores.
+- Authenticode trust and payload integrity are related but not identical.
+  Accept an untrusted root only for the exact authorized development signer;
+  use native `WinVerifyTrust` and reject every other nonzero result.
+- Lexical path containment is insufficient for a signing tool. Reject reparse
+  points so a repository path cannot redirect SignTool to an external file.
