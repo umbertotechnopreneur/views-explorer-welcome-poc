@@ -55,3 +55,14 @@ Completed work is recorded here with date and validation evidence. Open work sta
   the currently documented public Windows contracts.
 - Ten broker action-policy tests pass, including command and target injection
   rejection cases.
+
+## 2026-07-27 — Packaging feasibility gate
+
+- Closed MSIX and sparse-package COM registration for the Namespace Extension:
+  official MSIX guidance excludes in-process Shell extensions loaded by an
+  external process such as Explorer.
+- Recorded the supported hybrid direction: classic installer for the native
+  Explorer DLL, with optional external-location identity only for standalone
+  and out-of-process components.
+- Added an unsigned identity-only manifest and bounded build script; it never
+  signs, trusts, installs, registers, or removes a package.

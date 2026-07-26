@@ -22,7 +22,12 @@
 - [x] Add exact-ID, out-of-process adapters for recent items, Settings, and
   terminal profiles.
 - [x] Add negative action-policy tests for command and target injection.
-- [ ] Add manifest/MSIX registration after the per-user prototype is proven.
+- [x] Close MSIX/sparse-package registration for the in-process Namespace
+  Extension as unsupported by the official packaging model.
+- [x] Add an identity-only external-location manifest and unsigned build check
+  for standalone/out-of-process components.
+- [ ] Prototype a classic signed installer with architecture-matched COM and
+  Shell namespace registration, rollback, and clean uninstall.
 
 ## Completed
 

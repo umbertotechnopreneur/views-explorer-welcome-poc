@@ -34,6 +34,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -Command "dotnet test .\tests\ExplorerWelcome.Broker.Tests\ExplorerWelcome.Broker.Tests.csproj --nologo --configuration Release"
 
+      - name: Validate identity-only package
+        shell: pwsh
+        run: pwsh -NoProfile -File .\scripts\build-identity-package.ps1
+
       - name: Build native x64
         shell: pwsh
         run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture x64 -Configuration Release -PlatformToolset v145

@@ -32,9 +32,14 @@ Explorer. Use [scripts/register-explorer-component.ps1](scripts/register-explore
 only when a real Namespace Extension DLL exists. The script is per-user,
 reversible, refuses `.exe` files, and refreshes the Shell association cache.
 
-For production packaging, prefer manifest-based COM registration in an MSIX or
-sparse package. The project intentionally does not expose context-menu
-handlers; the only target surface is the dedicated `This PC` folder view.
+MSIX cannot deliver this DLL as an in-process Shell Extension loaded by
+`explorer.exe`; Microsoft's packaging guidance explicitly excludes modules
+loaded into processes outside their package. Production deployment therefore
+needs a classic installer for the architecture-matched COM DLL and Shell
+namespace junction. An optional package-with-external-location may grant
+identity only to the standalone/out-of-process components. See
+[packaging feasibility](packaging/README.md). Context-menu handlers remain
+excluded.
 
 ## Architecture
 
@@ -161,6 +166,7 @@ has been inspected.
 
   ```powershell
   pwsh -NoProfile -File .\scripts\preflight.ps1
+  pwsh -NoProfile -Command "dotnet test .\tests\ExplorerWelcome.Broker.Tests\ExplorerWelcome.Broker.Tests.csproj --configuration Release"
   pwsh -NoProfile -File .\scripts\secret-scan.ps1
   pwsh -NoProfile -Command "gitleaks detect --source . --redact --no-banner"
   pwsh -NoProfile -Command "git diff --check"
@@ -195,7 +201,10 @@ Then launch the native host from Visual Studio or the architecture-specific outp
 ## What this POC does not prove yet
 
 - Safe lifetime behavior inside a real Explorer process.
-- Package identity, MSIX deployment, or manifest-based COM registration.
+- A production classic installer, signing pipeline, update/rollback flow, or
+  enterprise servicing model. MSIX in-process Shell Extension deployment has
+  been closed as unsupported; the identity-only external-location template is
+  not an Explorer registration mechanism.
 - Production accessibility, signing, telemetry, search/indexing, or enterprise servicing.
 
 Those are explicit next experiments after the host and pipe contract are stable.

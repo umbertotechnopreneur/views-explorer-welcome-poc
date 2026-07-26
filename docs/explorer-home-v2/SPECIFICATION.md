@@ -716,9 +716,14 @@ These are acceptance targets, not claims about the current implementation.
 
 ### Phase 4 - Packaged integration
 
-- MSIX or sparse-package COM registration.
-- Optional packaged `IExplorerCommand` integration.
-- Signing, update, rollback, and uninstall.
+- Close the MSIX/sparse-package in-process Shell Extension gate against
+  official Windows packaging constraints.
+- Keep classic installer registration for the architecture-matched Namespace
+  Extension DLL.
+- Optionally grant package identity only to standalone/out-of-process
+  components by using a package with external location.
+- Add signing, update, rollback, and uninstall after the classic installer
+  prototype is proven.
 
 ### Phase 5 - Production hardening
 
@@ -787,7 +792,9 @@ that can be validated on the supported Windows compatibility matrix.
 | Same-tab folder navigation | Accepted | `IShellBrowser::BrowseObject` with `SBSP_SAMEBROWSER` |
 | Contextual installed-tool discovery | Accepted | Useful, personalized, and avoids irrelevant fixed menus |
 | Moving hover animation | Rejected | Stationary interaction requirement |
-| Public-package context menu | Deferred | Requires a separate packaged `IExplorerCommand` phase |
+| Context-menu integration | Excluded | The project exposes only the dedicated namespace page |
+| MSIX registration for the Namespace Extension DLL | Rejected | MSIX does not support in-process Shell extensions loaded into an external process |
+| External-location identity for host/broker | Accepted with limits | Identity only; it does not register the Explorer DLL |
 
 ## 23. Official references
 
