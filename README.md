@@ -6,6 +6,8 @@ This repository explores whether a small native Win32/C++/WinRT XAML Island can 
 
 This is a feasibility study, not a production Explorer replacement. The current proof validates the pieces that can be tested safely without modifying Explorer registration or loading application logic into `explorer.exe`.
 
+The repository's Windows CI builds the managed projects and the native host for both x64 and ARM64, then runs a redacted working-tree secret scan.
+
 ## Architecture
 
 ```text
