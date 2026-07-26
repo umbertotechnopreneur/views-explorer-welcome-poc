@@ -142,10 +142,22 @@ HWND CreateHostWindow(HINSTANCE instance)
         instance,
         nullptr);
 }
+
+void PumpPendingMessages()
+{
+    MSG message{};
+    while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
+    {
+        TranslateMessage(&message);
+        DispatchMessageW(&message);
+    }
+}
 }
 
-int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand)
+int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int showCommand)
 {
+    const bool lifetimeSmoke =
+        commandLine && _wcsicmp(commandLine, L"--lifetime-smoke") == 0;
     try
     {
         winrt::init_apartment(apartment_type::single_threaded);
@@ -159,6 +171,38 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand)
         auto interop = g_xamlSource.as<IDesktopWindowXamlSourceNative>();
         winrt::check_hresult(interop->AttachToWindow(window));
         winrt::check_hresult(interop->get_WindowHandle(&g_xamlChild));
+
+        if (lifetimeSmoke)
+        {
+            RECT clientRect{};
+            winrt::check_bool(GetClientRect(window, &clientRect) != FALSE);
+            winrt::check_bool(SetWindowPos(
+                g_xamlChild,
+                nullptr,
+                0,
+                0,
+                clientRect.right - clientRect.left,
+                clientRect.bottom - clientRect.top,
+                SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW) != FALSE);
+
+            for (int iteration = 0; iteration < 50; ++iteration)
+            {
+                g_xamlSource.Content(ExplorerWelcome::NativeUi::BuildWelcomePage(
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}));
+                PumpPendingMessages();
+                g_xamlSource.Content(nullptr);
+                PumpPendingMessages();
+            }
+
+            DestroyWindow(window);
+            winrt::uninit_apartment();
+            return 0;
+        }
+
         g_xamlSource.Content(ExplorerWelcome::NativeUi::BuildWelcomePage(
             ExplorerWelcome::NativeUi::BrokerClient::Ping,
             [](std::wstring const& action, std::wstring const& target)
@@ -196,7 +240,10 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand)
     }
     catch (const winrt::hresult_error& error)
     {
-        MessageBoxW(nullptr, error.message().c_str(), L"Views Explorer Welcome POC", MB_ICONERROR | MB_OK);
+        if (!lifetimeSmoke)
+        {
+            MessageBoxW(nullptr, error.message().c_str(), L"Views Explorer Welcome POC", MB_ICONERROR | MB_OK);
+        }
         return 1;
     }
 }

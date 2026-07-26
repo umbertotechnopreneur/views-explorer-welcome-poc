@@ -7,6 +7,7 @@
 #include <windows.h>
 
 #include <array>
+#include <atomic>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -217,14 +218,36 @@ inline NativeSnapshot LoadCachedSnapshot()
 
 inline void LaunchActionAsync(std::wstring action, std::wstring target)
 {
-    std::thread([action = std::move(action), target = std::move(target)]
+    static std::atomic_uint32_t inFlightActions{ 0 };
+    if (inFlightActions.fetch_add(1) >= 4)
     {
-        const std::string request =
-            "{\"version\":2,\"type\":\"action.request\",\"correlationId\":\"" +
-            CorrelationId() + "\",\"action\":\"" + EscapeJson(action) +
-            "\",\"target\":\"" + EscapeJson(target) + "\"}";
-        std::string ignored;
-        SendRequest(request, ignored);
-    }).detach();
+        inFlightActions.fetch_sub(1);
+        return;
+    }
+
+    try
+    {
+        std::thread([action = std::move(action), target = std::move(target)]
+        {
+            try
+            {
+                const std::string request =
+                    "{\"version\":2,\"type\":\"action.request\",\"correlationId\":\"" +
+                    CorrelationId() + "\",\"action\":\"" + EscapeJson(action) +
+                    "\",\"target\":\"" + EscapeJson(target) + "\"}";
+                std::string ignored;
+                SendRequest(request, ignored);
+            }
+            catch (...)
+            {
+                // Detached action failures are intentionally isolated from Explorer.
+            }
+            inFlightActions.fetch_sub(1);
+        }).detach();
+    }
+    catch (...)
+    {
+        inFlightActions.fetch_sub(1);
+    }
 }
 }

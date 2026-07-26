@@ -66,3 +66,18 @@ Completed work is recorded here with date and validation evidence. Open work sta
   and out-of-process components.
 - Added an unsigned identity-only manifest and bounded build script; it never
   signs, trusts, installs, registers, or removes a package.
+
+## 2026-07-27 — First Explorer safety hardening pass
+
+- Added page-lifetime and refresh-coalescing guards so late broker completions
+  cannot update a closing XAML Island or propagate dispatcher failure.
+- Limited concurrent detached action requests and kept all activation outside
+  Explorer.
+- Expanded the broker suite to 26 passing tests covering bounded physical
+  framing, malformed JSON, protocol versions, depth, size, correlation IDs,
+  control characters, arguments, and action injection.
+- Added a five-second connected-client read timeout so an idle local pipe
+  client cannot monopolize the single broker endpoint.
+- Added accessible names for metric and storage progress bars plus a polite
+  live dashboard status.
+- The hidden native host stress mode passed 50 XAML create/teardown cycles.

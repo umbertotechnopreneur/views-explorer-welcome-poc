@@ -28,6 +28,17 @@
   for standalone/out-of-process components.
 - [ ] Prototype a classic signed installer with architecture-matched COM and
   Shell namespace registration, rollback, and clean uninstall.
+- [x] Guard late XAML dispatcher callbacks after view destruction and coalesce
+  concurrent refreshes/actions.
+- [x] Add bounded malformed-message, depth, correlation, and argument tests.
+- [x] Enforce the pipe message limit while reading, with a connected-client
+  timeout and disconnect isolation.
+- [x] Add accessible metric/volume names and polite dashboard status updates.
+- [x] Add a hidden 50-cycle native XAML create/teardown smoke test.
+- [x] Add static validation for forbidden Shell/menu/heavy-work and hover
+  patterns.
+- [ ] Run the full manual Explorer compatibility, DPI, High Contrast, Narrator,
+  restart, and leak matrix on supported Windows builds.
 
 ## Completed
 
@@ -43,6 +54,10 @@
 - Namespace Extension DLL x64/ARM64 builds and COM export check — passed locally.
 - Namespace Extension register/status/unregister cycle — passed locally; final status is unregistered.
 - Broker + HeavyApp named-pipe snapshot — passed locally.
+- Broker policy/framing suite — 26/26 Release tests passed locally.
+- Native XAML lifetime smoke — 50/50 hidden create/teardown cycles passed on
+  x64 Release.
+- Static Explorer boundary validation — passed locally.
 - `pwsh -NoProfile -File .\scripts\secret-scan.ps1` — no likely secret patterns.
 - GitHub Actions run `30212826308` — passed managed, native x64, native ARM64, and secret scan.
 - Explorer Home V2 specification and single official mockup added under `docs/explorer-home-v2/`.

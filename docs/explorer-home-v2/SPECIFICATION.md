@@ -679,7 +679,7 @@ These are acceptance targets, not claims about the current implementation.
 - Broker restart reconnects without reopening Explorer.
 - View destruction cancels all callbacks and timers.
 - Repeated navigation does not leak windows, COM references, or XAML objects.
-- Package uninstall removes all namespace and context-menu registrations.
+- The classic installer removes all owned COM and namespace registrations.
 
 ## 19. Delivery phases
 

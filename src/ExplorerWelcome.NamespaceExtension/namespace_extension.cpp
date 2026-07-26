@@ -455,7 +455,7 @@ public:
             *object = static_cast<IShellView*>(view);
             return S_OK;
         }
-        // Deliberately no IContextMenu or other context-menu surface.
+        // Deliberately no context-menu surface.
         return E_NOINTERFACE;
     }
 

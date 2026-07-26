@@ -5,8 +5,10 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <functional>
 #include <iomanip>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -18,6 +20,8 @@
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.UI.Xaml.h>
+#include <winrt/Windows.UI.Xaml.Automation.h>
+#include <winrt/Windows.UI.Xaml.Automation.Peers.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
@@ -41,29 +45,75 @@ using ApplySnapshotCallback = std::function<void(NativeSnapshot const& snapshot)
 inline void RunSnapshotRefreshAsync(
     winrt::Windows::UI::Xaml::Controls::TextBlock const& status,
     SnapshotCallback const& snapshot,
-    ApplySnapshotCallback const& apply)
+    ApplySnapshotCallback const& apply,
+    std::shared_ptr<std::atomic_bool> const& pageAlive,
+    std::shared_ptr<std::atomic_bool> const& refreshRunning)
 {
+    if (!pageAlive || !pageAlive->load() || !refreshRunning || refreshRunning->exchange(true))
+    {
+        return;
+    }
+
     auto dispatcher = status.Dispatcher();
-    std::thread([status, dispatcher, snapshot, apply]
+    std::thread([status, dispatcher, snapshot, apply, pageAlive, refreshRunning]
     {
         NativeSnapshot result;
         std::wstring summary;
-        const bool available = snapshot && snapshot(result, summary);
+        bool available = false;
+        try
+        {
+            available = snapshot && snapshot(result, summary);
+        }
+        catch (...)
+        {
+            summary = L"Aggiornamento non disponibile · dati locali mantenuti";
+        }
+
         if (summary.empty())
         {
             summary = available ? L"Snapshot aggiornato" : L"Broker non disponibile · dati locali mantenuti";
         }
 
-        dispatcher.RunAsync(
-            winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
-            [status, available, result = std::move(result), summary, apply]
-            {
-                if (available && apply)
+        if (!pageAlive->load())
+        {
+            refreshRunning->store(false);
+            return;
+        }
+
+        try
+        {
+            dispatcher.RunAsync(
+                winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
+                [status,
+                 available,
+                 result = std::move(result),
+                 summary,
+                 apply,
+                 pageAlive,
+                 refreshRunning]
                 {
-                    apply(result);
-                }
-                status.Text(winrt::hstring(summary));
-            });
+                    try
+                    {
+                        if (pageAlive->load())
+                        {
+                            if (available && apply)
+                            {
+                                apply(result);
+                            }
+                            status.Text(winrt::hstring(summary));
+                        }
+                    }
+                    catch (...)
+                    {
+                        // A closing XAML Island may reject late UI work.
+                    }
+                    refreshRunning->store(false);
+                });
+        }
+        catch (...)
+        {
+            refreshRunning->store(false);
+        }
     }).detach();
 }
 
@@ -123,6 +173,9 @@ inline MetricCardElements MakeMetricCard(
     bar.Value(progress);
     bar.Height(4);
     bar.Foreground(SolidColorBrush(winrt::Windows::UI::ColorHelper::FromArgb(255, 91, 174, 255)));
+    winrt::Windows::UI::Xaml::Automation::AutomationProperties::SetName(
+        bar,
+        winrt::hstring(std::wstring(label.c_str()) + L": " + value.c_str()));
     panel.Children().Append(bar);
     auto detailText = MakeText(detail, 11, 0.72);
     panel.Children().Append(detailText);
@@ -157,6 +210,10 @@ inline winrt::Windows::UI::Xaml::Controls::Border MakeStorageCard(
     bar.Value(progress);
     bar.Height(5);
     bar.Foreground(SolidColorBrush(winrt::Windows::UI::ColorHelper::FromArgb(255, 71, 170, 255)));
+    winrt::Windows::UI::Xaml::Automation::AutomationProperties::SetName(
+        bar,
+        winrt::hstring(
+            std::wstring(title.c_str()) + L": " + used.c_str() + L"; " + healthText.c_str()));
     panel.Children().Append(bar);
     auto footer = Grid();
     footer.ColumnDefinitions().Append(ColumnDefinition());
@@ -478,6 +535,8 @@ inline winrt::Windows::UI::Xaml::UIElement BuildWelcomePage(
     NativeSnapshot const& initialSnapshot = {})
 {
     auto root = Grid();
+    auto pageAlive = std::make_shared<std::atomic_bool>(true);
+    auto refreshRunning = std::make_shared<std::atomic_bool>(false);
     root.RequestedTheme(ElementTheme::Default);
     root.Background(SolidColorBrush(winrt::Windows::UI::ColorHelper::FromArgb(255, 23, 23, 26)));
 
@@ -489,6 +548,12 @@ inline winrt::Windows::UI::Xaml::UIElement BuildWelcomePage(
     page.Spacing(14);
 
     auto status = MakeText(L"Snapshot mock pronto · broker non interrogato", 12, 0.78);
+    winrt::Windows::UI::Xaml::Automation::AutomationProperties::SetName(
+        status,
+        L"Stato dashboard");
+    winrt::Windows::UI::Xaml::Automation::AutomationProperties::SetLiveSetting(
+        status,
+        winrt::Windows::UI::Xaml::Automation::Peers::AutomationLiveSetting::Polite);
 
     auto hero = Border();
     hero.CornerRadius(CornerRadius{ 18, 18, 18, 18 });
@@ -740,19 +805,33 @@ inline winrt::Windows::UI::Xaml::UIElement BuildWelcomePage(
         cpu.Value.Text(winrt::hstring(FormatPercent(data.CpuPercent)));
         cpu.Detail.Text(L"Dato locale");
         cpu.Progress.Value(ProgressValue(data.CpuPercent));
+        winrt::Windows::UI::Xaml::Automation::AutomationProperties::SetName(
+            cpu.Progress,
+            winrt::hstring(L"CPU: " + FormatPercent(data.CpuPercent)));
         memory.Value.Text(winrt::hstring(FormatPercent(data.MemoryPercent)));
         memory.Detail.Text(data.MemoryTotalBytes > 0
             ? winrt::hstring(FormatBytes(data.MemoryUsedBytes) + L" / " + FormatBytes(data.MemoryTotalBytes))
             : winrt::hstring(L"Non disponibile"));
         memory.Progress.Value(ProgressValue(data.MemoryPercent));
+        winrt::Windows::UI::Xaml::Automation::AutomationProperties::SetName(
+            memory.Progress,
+            winrt::hstring(L"Memoria: " + FormatPercent(data.MemoryPercent)));
         storage.Value.Text(winrt::hstring(FormatPercent(data.StoragePercent)));
         storage.Detail.Text(L"Volume principale");
         storage.Progress.Value(ProgressValue(data.StoragePercent));
+        winrt::Windows::UI::Xaml::Automation::AutomationProperties::SetName(
+            storage.Progress,
+            winrt::hstring(L"Archiviazione: " + FormatPercent(data.StoragePercent)));
         network.Value.Text(winrt::hstring(
             FormatRate(data.NetworkReceiveBytesPerSecond, data.NetworkSendBytesPerSecond)));
         network.Detail.Text(L"Invio/Ricezione");
         network.Progress.Value(
             data.NetworkReceiveBytesPerSecond || data.NetworkSendBytesPerSecond ? 50.0 : 0.0);
+        winrt::Windows::UI::Xaml::Automation::AutomationProperties::SetName(
+            network.Progress,
+            winrt::hstring(
+                L"Rete: " +
+                FormatRate(data.NetworkReceiveBytesPerSecond, data.NetworkSendBytesPerSecond)));
 
         PopulateStorageCards(storageWrap, data, status, action);
         PopulateLowerCards(lower, data, status, action);
@@ -763,12 +842,12 @@ inline winrt::Windows::UI::Xaml::UIElement BuildWelcomePage(
     retry.Content(winrt::box_value(L"Aggiorna dati"));
     retry.HorizontalAlignment(HorizontalAlignment::Left);
     retry.MinHeight(40);
-    retry.Click([status, pingBroker, snapshot, applySnapshot](auto const&, auto const&)
+    retry.Click([status, pingBroker, snapshot, applySnapshot, pageAlive, refreshRunning](auto const&, auto const&)
     {
         status.Text(L"Aggiornamento in corso…");
         if (snapshot)
         {
-            RunSnapshotRefreshAsync(status, snapshot, applySnapshot);
+            RunSnapshotRefreshAsync(status, snapshot, applySnapshot, pageAlive, refreshRunning);
         }
         else
         {
@@ -781,13 +860,18 @@ inline winrt::Windows::UI::Xaml::UIElement BuildWelcomePage(
 
     scroll.Content(page);
     root.Children().Append(scroll);
-    root.Loaded([status, snapshot, applySnapshot](auto const&, auto const&)
+    root.Loaded([status, snapshot, applySnapshot, pageAlive, refreshRunning](auto const&, auto const&)
     {
+        pageAlive->store(true);
         if (snapshot)
         {
             status.Text(L"Caricamento dati locali…");
-            RunSnapshotRefreshAsync(status, snapshot, applySnapshot);
+            RunSnapshotRefreshAsync(status, snapshot, applySnapshot, pageAlive, refreshRunning);
         }
+    });
+    root.Unloaded([pageAlive](auto const&, auto const&)
+    {
+        pageAlive->store(false);
     });
     return root;
 }

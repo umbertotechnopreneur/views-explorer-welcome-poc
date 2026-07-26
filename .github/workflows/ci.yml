@@ -42,9 +42,17 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture x64 -Configuration Release -PlatformToolset v145
 
+      - name: Stress native XAML lifetime
+        shell: pwsh
+        run: pwsh -NoProfile -File .\scripts\stress-native-host.ps1 -Architecture x64 -Configuration Release
+
       - name: Build native ARM64
         shell: pwsh
         run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture ARM64 -Configuration Release -PlatformToolset v145
+
+      - name: Validate Explorer boundaries
+        shell: pwsh
+        run: pwsh -NoProfile -File .\scripts\validate-boundaries.ps1
 
       - name: Secret-pattern scan
         shell: pwsh

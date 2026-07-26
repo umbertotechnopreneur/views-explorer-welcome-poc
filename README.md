@@ -167,6 +167,8 @@ has been inspected.
   ```powershell
   pwsh -NoProfile -File .\scripts\preflight.ps1
   pwsh -NoProfile -Command "dotnet test .\tests\ExplorerWelcome.Broker.Tests\ExplorerWelcome.Broker.Tests.csproj --configuration Release"
+  pwsh -NoProfile -File .\scripts\stress-native-host.ps1 -Architecture x64 -Configuration Release
+  pwsh -NoProfile -File .\scripts\validate-boundaries.ps1
   pwsh -NoProfile -File .\scripts\secret-scan.ps1
   pwsh -NoProfile -Command "gitleaks detect --source . --redact --no-banner"
   pwsh -NoProfile -Command "git diff --check"

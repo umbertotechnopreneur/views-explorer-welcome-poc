@@ -7,8 +7,10 @@ using System.Text.Json;
 using ExplorerWelcome.Broker;
 using ExplorerWelcome.Contracts;
 
-const string defaultCorrelationId = "broker";
-var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+var json = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+{
+    MaxDepth = 16
+};
 var collector = new SnapshotCollector();
 var preferencesStore = new PreferencesStore();
 var snapshotCache = new SnapshotCache();
@@ -17,125 +19,140 @@ Console.WriteLine($"ExplorerWelcome.Broker listening on {PipeProtocol.PipeName}"
 
 while (true)
 {
-    await using var server = new NamedPipeServerStream(
-        PipeProtocol.PipeName,
-        PipeDirection.InOut,
-        1,
-        PipeTransmissionMode.Byte,
-        PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-
-    await server.WaitForConnectionAsync();
-    using var reader = new StreamReader(server);
-    await using var writer = new StreamWriter(server) { AutoFlush = true };
-
-    var line = await reader.ReadLineAsync();
-    var correlationId = defaultCorrelationId;
-    if (string.IsNullOrWhiteSpace(line) || line.Length > PipeProtocol.MaxLineLength)
-    {
-        await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "error", correlationId, Error: "Request is empty or too large."));
-        continue;
-    }
-
-    PipeRequest? request;
     try
     {
-        request = JsonSerializer.Deserialize<PipeRequest>(line, json);
-        correlationId = request?.CorrelationId ?? Guid.NewGuid().ToString("N");
-    }
-    catch (JsonException)
-    {
-        await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "error", correlationId, Error: "Request JSON is invalid."));
-        continue;
-    }
+        await using var server = new NamedPipeServerStream(
+            PipeProtocol.PipeName,
+            PipeDirection.InOut,
+            1,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
-    if (request is null || request.Version != PipeProtocol.CurrentVersion)
-    {
-        await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "error", correlationId, Error: "Unsupported protocol version."));
-        continue;
-    }
+        await server.WaitForConnectionAsync();
+        using var reader = new StreamReader(server);
+        await using var writer = new StreamWriter(server) { AutoFlush = true };
 
-    switch (request.Type)
-    {
-        case PipeProtocol.HostPingRequest:
-            await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "host.pong", correlationId));
-            break;
+        using var readTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var boundedLine = await BoundedLineReader.ReadAsync(
+            reader,
+            PipeProtocol.MaxLineLength,
+            readTimeout.Token);
 
-        case PipeProtocol.SnapshotRequest:
-            try
-            {
-                using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1_500));
-                var snapshot = await collector.CollectAsync(preferencesStore.Load(), timeout.Token);
-                snapshotCache.TrySave(snapshot);
-                await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "snapshot.response", correlationId, Snapshot: snapshot));
-            }
-            catch (OperationCanceledException)
-            {
-                await WriteStaleOrErrorAsync("Snapshot collection timed out.");
-            }
-            catch (Exception)
-            {
-                await WriteStaleOrErrorAsync("Snapshot collection failed.");
-            }
-            break;
-
-        case PipeProtocol.ActionRequest:
-            var action = ActionLauncher.TryLaunch(request, preferencesStore.Load());
-            await WriteAsync(new PipeResponse(
-                PipeProtocol.CurrentVersion,
-                action.Accepted ? "action.accepted" : "action.rejected",
-                correlationId,
-                ActionResult: action));
-            break;
-
-        case PipeProtocol.PreferencesRequest:
-            var preferencesResult = TryUpdatePreferences(request, preferencesStore);
-            await WriteAsync(new PipeResponse(
-                PipeProtocol.CurrentVersion,
-                preferencesResult.Accepted ? "preferences.accepted" : "preferences.rejected",
-                correlationId,
-                ActionResult: preferencesResult));
-            break;
-
-        default:
-            await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "error", correlationId, Error: "Unsupported request type."));
-            break;
-    }
-
-    async Task WriteAsync(PipeResponse response)
-    {
-        await writer.WriteLineAsync(JsonSerializer.Serialize(response, json));
-    }
-
-    async Task WriteStaleOrErrorAsync(string error)
-    {
-        if (snapshotCache.TryLoad(out var cached))
+        if (boundedLine.IsTooLong)
         {
-            var stale = cached with
-            {
-                Freshness = cached.Freshness with
-                {
-                    BrokerAvailable = true,
-                    IsStale = true,
-                    SectionErrors = new Dictionary<string, string>(cached.Freshness.SectionErrors)
-                    {
-                        ["snapshot"] = error
-                    }
-                }
-            };
             await WriteAsync(new PipeResponse(
                 PipeProtocol.CurrentVersion,
-                "snapshot.response",
-                correlationId,
-                Snapshot: stale,
-                Error: error));
-            return;
+                "error",
+                "broker",
+                Error: "Request is empty or too large."));
+            continue;
         }
 
-        await WriteAsync(new PipeResponse(
-            PipeProtocol.CurrentVersion,
-            "snapshot.error",
-            correlationId,
-            Error: error));
+        var parsed = PipeRequestParser.Parse(boundedLine.Line, json);
+        var correlationId = parsed.CorrelationId;
+        if (parsed.Error is not null)
+        {
+            await WriteAsync(new PipeResponse(
+                PipeProtocol.CurrentVersion,
+                "error",
+                correlationId,
+                Error: parsed.Error));
+            continue;
+        }
+
+        var request = parsed.Request!;
+
+        switch (request.Type)
+        {
+            case PipeProtocol.HostPingRequest:
+                await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "host.pong", correlationId));
+                break;
+
+            case PipeProtocol.SnapshotRequest:
+                try
+                {
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1_500));
+                    var snapshot = await collector.CollectAsync(preferencesStore.Load(), timeout.Token);
+                    snapshotCache.TrySave(snapshot);
+                    await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "snapshot.response", correlationId, Snapshot: snapshot));
+                }
+                catch (OperationCanceledException)
+                {
+                    await WriteStaleOrErrorAsync("Snapshot collection timed out.");
+                }
+                catch (Exception)
+                {
+                    await WriteStaleOrErrorAsync("Snapshot collection failed.");
+                }
+                break;
+
+            case PipeProtocol.ActionRequest:
+                var action = ActionLauncher.TryLaunch(request, preferencesStore.Load());
+                await WriteAsync(new PipeResponse(
+                    PipeProtocol.CurrentVersion,
+                    action.Accepted ? "action.accepted" : "action.rejected",
+                    correlationId,
+                    ActionResult: action));
+                break;
+
+            case PipeProtocol.PreferencesRequest:
+                var preferencesResult = TryUpdatePreferences(request, preferencesStore);
+                await WriteAsync(new PipeResponse(
+                    PipeProtocol.CurrentVersion,
+                    preferencesResult.Accepted ? "preferences.accepted" : "preferences.rejected",
+                    correlationId,
+                    ActionResult: preferencesResult));
+                break;
+
+            default:
+                await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "error", correlationId, Error: "Unsupported request type."));
+                break;
+        }
+
+        async Task WriteAsync(PipeResponse response)
+        {
+            await writer.WriteLineAsync(JsonSerializer.Serialize(response, json));
+        }
+
+        async Task WriteStaleOrErrorAsync(string error)
+        {
+            if (snapshotCache.TryLoad(out var cached))
+            {
+                var stale = cached with
+                {
+                    Freshness = cached.Freshness with
+                    {
+                        BrokerAvailable = true,
+                        IsStale = true,
+                        SectionErrors = new Dictionary<string, string>(cached.Freshness.SectionErrors)
+                        {
+                            ["snapshot"] = error
+                        }
+                    }
+                };
+                await WriteAsync(new PipeResponse(
+                    PipeProtocol.CurrentVersion,
+                    "snapshot.response",
+                    correlationId,
+                    Snapshot: stale,
+                    Error: error));
+                return;
+            }
+
+            await WriteAsync(new PipeResponse(
+                PipeProtocol.CurrentVersion,
+                "snapshot.error",
+                correlationId,
+                Error: error));
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        // A connected client gets five seconds to send one bounded request.
+    }
+    catch (IOException)
+    {
+        // A disconnected local client must not terminate the long-running broker.
     }
 }
 
