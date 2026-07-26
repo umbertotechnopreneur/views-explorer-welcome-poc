@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Text;
 
 using ExplorerWelcome.Contracts;
 
@@ -38,7 +39,7 @@ public sealed class SnapshotCollector
         var recentItems = CollectRecentItems(errors);
         var tools = ToolDiscovery.Discover(errors);
         var terminalProfiles = tools
-            .Where(tool => tool.SupportedTargetKinds.Contains("Folder", StringComparer.OrdinalIgnoreCase))
+            .Where(tool => tool.Id is "windows-terminal" or "powershell" or "command-prompt" or "wsl")
             .Select(tool => new TerminalProfileSnapshot
             {
                 Id = tool.Id,
@@ -150,10 +151,11 @@ public sealed class SnapshotCollector
             RegistryHive.LocalMachine,
             @"SOFTWARE\Microsoft\Windows NT\CurrentVersion",
             "DisplayVersion") ?? Environment.OSVersion.Version.ToString();
-        var wallpaper = ReadRegistryString(
-            RegistryHive.CurrentUser,
-            @"Control Panel\Desktop",
-            "WallPaper");
+        var wallpaper = ReadDesktopWallpaper();
+        if (string.IsNullOrWhiteSpace(wallpaper))
+        {
+            errors.TryAdd("wallpaper", "Windows did not expose a wallpaper image; the UI fallback is used.");
+        }
 
         if (!preferences.PrivacyShowDeviceDetails)
         {
@@ -278,25 +280,119 @@ public sealed class SnapshotCollector
                 return Array.Empty<RecentItemSnapshot>();
             }
 
-            return Directory.EnumerateFiles(recentRoot)
-                .Select(path => new FileInfo(path))
-                .OrderByDescending(file => file.LastWriteTimeUtc)
-                .Take(5)
-                .Select(file => new RecentItemSnapshot
+            var result = new List<RecentItemSnapshot>();
+            var identities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var file in Directory.EnumerateFiles(recentRoot)
+                         .Select(path => new FileInfo(path))
+                         .OrderByDescending(file => file.LastWriteTimeUtc)
+                         .Take(32))
+            {
+                var target = file.Extension.Equals(".lnk", StringComparison.OrdinalIgnoreCase)
+                    ? ReadShellLinkTarget(file.FullName)
+                    : file.FullName;
+                if (string.IsNullOrWhiteSpace(target))
                 {
-                    Id = file.FullName,
-                    DisplayName = Path.GetFileNameWithoutExtension(file.Name),
-                    Parent = recentRoot,
-                    TargetKind = Path.GetExtension(file.Name).Equals(".lnk", StringComparison.OrdinalIgnoreCase) ? "ShellLink" : "File",
+                    continue;
+                }
+
+                var isFile = File.Exists(target);
+                var isDirectory = !isFile && Directory.Exists(target);
+                if (!isFile && !isDirectory)
+                {
+                    continue;
+                }
+
+                var identity = Path.GetFullPath(target);
+                if (!identities.Add(identity))
+                {
+                    continue;
+                }
+
+                result.Add(new RecentItemSnapshot
+                {
+                    Id = identity,
+                    DisplayName = Path.GetFileName(target.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)),
+                    Parent = Path.GetDirectoryName(target),
+                    TargetPath = target,
+                    TargetKind = isDirectory ? "Folder" : "File",
                     TimestampUtc = file.LastWriteTimeUtc,
                     IsAvailable = true
-                })
-                .ToArray();
+                });
+
+                if (result.Count == 5)
+                {
+                    break;
+                }
+            }
+
+            return result;
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             errors.TryAdd("recentItems", exception.Message);
             return Array.Empty<RecentItemSnapshot>();
+        }
+    }
+
+    private static string? ReadDesktopWallpaper()
+    {
+        IDesktopWallpaper? wallpaper = null;
+        try
+        {
+            var wallpaperType = Type.GetTypeFromCLSID(
+                new Guid("C2CF3110-460E-4FC1-B9D0-8A1C0C9CC4BD"),
+                throwOnError: true);
+            wallpaper = (IDesktopWallpaper)Activator.CreateInstance(wallpaperType!)!;
+            var path = wallpaper.GetWallpaper(null);
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                return path;
+            }
+
+            if (wallpaper.GetMonitorDevicePathCount() > 0)
+            {
+                var monitor = wallpaper.GetMonitorDevicePathAt(0);
+                path = wallpaper.GetWallpaper(monitor);
+            }
+            return string.IsNullOrWhiteSpace(path) ? null : path;
+        }
+        catch (COMException)
+        {
+            return null;
+        }
+        finally
+        {
+            if (wallpaper is not null)
+            {
+                Marshal.FinalReleaseComObject(wallpaper);
+            }
+        }
+    }
+
+    private static string? ReadShellLinkTarget(string shortcutPath)
+    {
+        IShellLinkW? link = null;
+        try
+        {
+            var shellLinkType = Type.GetTypeFromCLSID(
+                new Guid("00021401-0000-0000-C000-000000000046"),
+                throwOnError: true);
+            link = (IShellLinkW)Activator.CreateInstance(shellLinkType!)!;
+            ((System.Runtime.InteropServices.ComTypes.IPersistFile)link).Load(shortcutPath, 0);
+            var path = new StringBuilder(32768);
+            link.GetPath(path, path.Capacity, out _, 4);
+            return path.Length == 0 ? null : path.ToString();
+        }
+        catch (COMException)
+        {
+            return null;
+        }
+        finally
+        {
+            if (link is not null)
+            {
+                Marshal.FinalReleaseComObject(link);
+            }
         }
     }
 
@@ -425,6 +521,71 @@ public sealed class SnapshotCollector
         out System.Runtime.InteropServices.ComTypes.FILETIME idleTime,
         out System.Runtime.InteropServices.ComTypes.FILETIME kernelTime,
         out System.Runtime.InteropServices.ComTypes.FILETIME userTime);
+
+    [ComImport]
+    [Guid("B92B56A9-8B55-4E14-9A89-0199BBB6F93B")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IDesktopWallpaper
+    {
+        void SetWallpaper(
+            [MarshalAs(UnmanagedType.LPWStr)] string? monitorId,
+            [MarshalAs(UnmanagedType.LPWStr)] string wallpaper);
+
+        [return: MarshalAs(UnmanagedType.LPWStr)]
+        string? GetWallpaper([MarshalAs(UnmanagedType.LPWStr)] string? monitorId);
+
+        [return: MarshalAs(UnmanagedType.LPWStr)]
+        string GetMonitorDevicePathAt(uint monitorIndex);
+
+        uint GetMonitorDevicePathCount();
+    }
+
+    [ComImport]
+    [Guid("000214F9-0000-0000-C000-000000000046")]
+    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IShellLinkW
+    {
+        void GetPath(
+            [Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder file,
+            int fileCount,
+            out Win32FindData findData,
+            uint flags);
+
+        void GetIDList(out nint itemIdList);
+        void SetIDList(nint itemIdList);
+        void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder name, int nameCount);
+        void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string name);
+        void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder directory, int directoryCount);
+        void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string directory);
+        void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder arguments, int argumentCount);
+        void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string arguments);
+        void GetHotkey(out short hotkey);
+        void SetHotkey(short hotkey);
+        void GetShowCmd(out int showCommand);
+        void SetShowCmd(int showCommand);
+        void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder iconPath, int iconPathCount, out int iconIndex);
+        void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string iconPath, int iconIndex);
+        void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string path, uint reserved);
+        void Resolve(nint window, uint flags);
+        void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct Win32FindData
+    {
+        public uint FileAttributes;
+        public System.Runtime.InteropServices.ComTypes.FILETIME CreationTime;
+        public System.Runtime.InteropServices.ComTypes.FILETIME LastAccessTime;
+        public System.Runtime.InteropServices.ComTypes.FILETIME LastWriteTime;
+        public uint FileSizeHigh;
+        public uint FileSizeLow;
+        public uint Reserved0;
+        public uint Reserved1;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+        public string? FileName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
+        public string? AlternateFileName;
+    }
 }
 
 internal static class QuickSettingsCatalog

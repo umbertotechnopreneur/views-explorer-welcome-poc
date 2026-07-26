@@ -43,6 +43,7 @@
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;UNICODE;_UNICODE;WINVER=0x0A00;_WIN32_WINNT=0x0A00;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\cppwinrt;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\um;$(WindowsSdkDir)Include\$(WindowsTargetPlatformVersion)\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>

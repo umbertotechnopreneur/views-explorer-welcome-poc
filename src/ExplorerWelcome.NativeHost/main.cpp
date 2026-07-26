@@ -10,9 +10,6 @@
 #undef GetCurrentTime
 #endif
 
-#include <string>
-#include <string_view>
-
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.UI.h>
@@ -24,6 +21,7 @@
 #include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
+#include "..\ExplorerWelcome.NativeUi\broker_client.h"
 #include "..\ExplorerWelcome.NativeUi\welcome_page.h"
 
 using namespace winrt;
@@ -38,106 +36,6 @@ namespace
 HWND g_xamlChild{};
 DesktopWindowXamlSource g_xamlSource{ nullptr };
 WindowsXamlManager g_xamlManager{ nullptr };
-
-std::string EscapeJson(std::wstring_view value)
-{
-    std::string escaped;
-    for (const wchar_t character : value)
-    {
-        switch (character)
-        {
-        case L'\\': escaped += "\\\\"; break;
-        case L'"': escaped += "\\\""; break;
-        case L'\r': escaped += "\\r"; break;
-        case L'\n': escaped += "\\n"; break;
-        case L'\t': escaped += "\\t"; break;
-        default:
-            if (character >= 0x20 && character <= 0x7e)
-            {
-                escaped.push_back(static_cast<char>(character));
-            }
-            else
-            {
-                escaped += "?";
-            }
-            break;
-        }
-    }
-    return escaped;
-}
-
-bool SendBrokerRequest(std::string const& request, std::string& response)
-{
-    HANDLE pipe = CreateFileW(
-        LR"(\\.\pipe\views-explorer-welcome-poc)",
-        GENERIC_READ | GENERIC_WRITE,
-        0,
-        nullptr,
-        OPEN_EXISTING,
-        0,
-        nullptr);
-
-    if (pipe == INVALID_HANDLE_VALUE)
-    {
-        return false;
-    }
-
-    const std::string line = request + "\n";
-    DWORD written{};
-    const bool sent = WriteFile(pipe, line.data(), static_cast<DWORD>(line.size()), &written, nullptr) != FALSE;
-
-    char responseBuffer[4096]{};
-    DWORD read{};
-    const bool received = sent && ReadFile(pipe, responseBuffer, sizeof(responseBuffer) - 1, &read, nullptr) != FALSE;
-    CloseHandle(pipe);
-
-    if (received)
-    {
-        response.assign(responseBuffer, read);
-    }
-    return received;
-}
-
-bool PingBroker()
-{
-    std::string response;
-    return SendBrokerRequest(
-        R"({"version":2,"type":"host.ping","correlationId":"native-host-ping"})",
-        response) && response.find("host.pong") != std::string::npos;
-}
-
-bool RequestSnapshot(std::wstring& summary)
-{
-    std::string response;
-    const bool received = SendBrokerRequest(
-        R"({"version":2,"type":"snapshot.request","correlationId":"native-host-snapshot"})",
-        response);
-    if (!received)
-    {
-        summary = L"Broker offline · dati locali mantenuti";
-        return false;
-    }
-
-    if (response.find("snapshot.response") != std::string::npos)
-    {
-        summary = L"Snapshot aggiornato dal broker";
-        return true;
-    }
-
-    summary = response.find("snapshot.stale") != std::string::npos
-        ? L"Snapshot stale · dati locali mantenuti"
-        : L"Snapshot non disponibile · dati locali mantenuti";
-    return false;
-}
-
-void LaunchBrokerAction(std::wstring const& action, std::wstring const& target)
-{
-    const std::string request =
-        "{\"version\":2,\"type\":\"action.request\",\"correlationId\":\"native-host-action\",\"action\":\"" +
-        EscapeJson(action) + "\",\"target\":\"" + EscapeJson(target) + "\"}";
-    std::string ignored;
-    SendBrokerRequest(request, ignored);
-}
 
 UIElement BuildWelcomeContent()
 {
@@ -180,7 +78,7 @@ UIElement BuildWelcomeContent()
     action.HorizontalAlignment(HorizontalAlignment::Left);
     action.Click([status](Windows::Foundation::IInspectable const&, RoutedEventArgs const&)
     {
-        status.Text(PingBroker() ? L"Named pipe connected · heavy process ready" : L"Named pipe unavailable · host remains responsive");
+        status.Text(ExplorerWelcome::NativeUi::BrokerClient::Ping() ? L"Named pipe connected · heavy process ready" : L"Named pipe unavailable · host remains responsive");
     });
 
     content.Children().Append(eyebrow);
@@ -200,7 +98,14 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wParam, LPARAM lPa
     case WM_SIZE:
         if (g_xamlChild != nullptr)
         {
-            MoveWindow(g_xamlChild, 0, 0, LOWORD(lParam), HIWORD(lParam), TRUE);
+            SetWindowPos(
+                g_xamlChild,
+                nullptr,
+                0,
+                0,
+                LOWORD(lParam),
+                HIWORD(lParam),
+                SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
         }
         return 0;
     case WM_DESTROY:
@@ -226,12 +131,12 @@ HWND CreateHostWindow(HINSTANCE instance)
     return CreateWindowExW(
         0,
         className,
-        L"Views Explorer Welcome — feasibility study",
+        L"Views Explorer Welcome - feasibility study",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        720,
-        480,
+        1440,
+        900,
         nullptr,
         nullptr,
         instance,
@@ -255,16 +160,29 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand)
         winrt::check_hresult(interop->AttachToWindow(window));
         winrt::check_hresult(interop->get_WindowHandle(&g_xamlChild));
         g_xamlSource.Content(ExplorerWelcome::NativeUi::BuildWelcomePage(
-            PingBroker,
+            ExplorerWelcome::NativeUi::BrokerClient::Ping,
             [](std::wstring const& action, std::wstring const& target)
             {
-                LaunchBrokerAction(action, target);
+                ExplorerWelcome::NativeUi::BrokerClient::LaunchActionAsync(action, target);
             },
             {},
-            RequestSnapshot));
+            ExplorerWelcome::NativeUi::BrokerClient::RequestSnapshot,
+            ExplorerWelcome::NativeUi::BrokerClient::LoadCachedSnapshot()));
 
         ShowWindow(window, showCommand);
         UpdateWindow(window);
+
+        RECT clientRect{};
+        winrt::check_bool(GetClientRect(window, &clientRect) != FALSE);
+        winrt::check_bool(SetWindowPos(
+            g_xamlChild,
+            nullptr,
+            0,
+            0,
+            clientRect.right - clientRect.left,
+            clientRect.bottom - clientRect.top,
+            SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW) != FALSE);
+        UpdateWindow(g_xamlChild);
 
         MSG message{};
         while (GetMessageW(&message, nullptr, 0, 0) > 0)

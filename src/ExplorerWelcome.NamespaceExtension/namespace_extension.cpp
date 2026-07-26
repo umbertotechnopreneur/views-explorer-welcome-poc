@@ -14,8 +14,6 @@
 #endif
 
 #include <atomic>
-#include <string>
-#include <string_view>
 
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
@@ -28,6 +26,7 @@
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Text.h>
 
+#include "..\ExplorerWelcome.NativeUi\broker_client.h"
 #include "..\ExplorerWelcome.NativeUi\welcome_page.h"
 
 using namespace winrt;
@@ -45,105 +44,6 @@ const CLSID kNamespaceClsid =
 std::atomic<long> g_objectCount{ 0 };
 std::atomic<long> g_serverLocks{ 0 };
 extern HINSTANCE g_instance;
-
-constexpr wchar_t kPipeName[] = LR"(\\.\pipe\views-explorer-welcome-poc)";
-
-std::string EscapeJson(std::wstring_view value)
-{
-    std::string escaped;
-    for (const wchar_t character : value)
-    {
-        switch (character)
-        {
-        case L'\\': escaped += "\\\\"; break;
-        case L'"': escaped += "\\\""; break;
-        case L'\r': escaped += "\\r"; break;
-        case L'\n': escaped += "\\n"; break;
-        case L'\t': escaped += "\\t"; break;
-        default:
-            if (character >= 0x20 && character <= 0x7e)
-            {
-                escaped.push_back(static_cast<char>(character));
-            }
-            else
-            {
-                escaped += "?";
-            }
-            break;
-        }
-    }
-    return escaped;
-}
-
-bool SendBrokerRequest(std::string const& request, std::string& response)
-{
-    if (!WaitNamedPipeW(kPipeName, 150))
-    {
-        return false;
-    }
-
-    HANDLE pipe = CreateFileW(kPipeName, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-    if (pipe == INVALID_HANDLE_VALUE)
-    {
-        return false;
-    }
-
-    const std::string line = request + "\n";
-    DWORD written{};
-    const bool sent = WriteFile(pipe, line.data(), static_cast<DWORD>(line.size()), &written, nullptr) != FALSE;
-
-    char responseBuffer[4096]{};
-    DWORD read{};
-    const bool received = sent && ReadFile(pipe, responseBuffer, sizeof(responseBuffer) - 1, &read, nullptr) != FALSE;
-    CloseHandle(pipe);
-
-    if (received)
-    {
-        response.assign(responseBuffer, read);
-    }
-    return received;
-}
-
-bool PingBroker()
-{
-    std::string response;
-    return SendBrokerRequest(
-        R"({"version":2,"type":"host.ping","correlationId":"namespace-ping"})",
-        response) && response.find("host.pong") != std::string::npos;
-}
-
-bool RequestSnapshot(std::wstring& summary)
-{
-    std::string response;
-    const bool received = SendBrokerRequest(
-        R"({"version":2,"type":"snapshot.request","correlationId":"namespace-snapshot"})",
-        response);
-    if (!received)
-    {
-        summary = L"Broker offline · dati locali mantenuti";
-        return false;
-    }
-
-    if (response.find("snapshot.response") != std::string::npos)
-    {
-        summary = L"Snapshot aggiornato dal broker";
-        return true;
-    }
-
-    summary = response.find("snapshot.stale") != std::string::npos
-        ? L"Snapshot stale · dati locali mantenuti"
-        : L"Snapshot non disponibile · dati locali mantenuti";
-    return false;
-}
-
-void LaunchBrokerAction(std::wstring const& action, std::wstring const& target)
-{
-    const std::string request =
-        "{\"version\":2,\"type\":\"action.request\",\"correlationId\":\"namespace-action\",\"action\":\"" +
-        EscapeJson(action) + "\",\"target\":\"" + EscapeJson(target) + "\"}";
-    std::string ignored;
-    SendBrokerRequest(request, ignored);
-}
 
 UIElement BuildWelcomeContent()
 {
@@ -186,7 +86,7 @@ UIElement BuildWelcomeContent()
     action.HorizontalAlignment(HorizontalAlignment::Left);
     action.Click([status](Windows::Foundation::IInspectable const&, RoutedEventArgs const&)
     {
-        status.Text(PingBroker() ? L"Named pipe connected · heavy process ready" : L"Named pipe unavailable · Explorer view remains responsive");
+        status.Text(ExplorerWelcome::NativeUi::BrokerClient::Ping() ? L"Named pipe connected · heavy process ready" : L"Named pipe unavailable · Explorer view remains responsive");
     });
 
     content.Children().Append(eyebrow);
@@ -345,13 +245,14 @@ public:
             winrt::check_hresult(interop->AttachToWindow(m_viewWindow));
             winrt::check_hresult(interop->get_WindowHandle(&m_xamlChild));
             m_xamlSource.Content(ExplorerWelcome::NativeUi::BuildWelcomePage(
-                PingBroker,
+                ExplorerWelcome::NativeUi::BrokerClient::Ping,
                 [](std::wstring const& action, std::wstring const& target)
                 {
-                    LaunchBrokerAction(action, target);
+                    ExplorerWelcome::NativeUi::BrokerClient::LaunchActionAsync(action, target);
                 },
                 {},
-                RequestSnapshot));
+                ExplorerWelcome::NativeUi::BrokerClient::RequestSnapshot,
+                ExplorerWelcome::NativeUi::BrokerClient::LoadCachedSnapshot()));
             ResizeXamlChild();
         }
         catch (const winrt::hresult_error& error)
@@ -426,7 +327,14 @@ private:
         {
             RECT rect{};
             GetClientRect(m_viewWindow, &rect);
-            MoveWindow(m_xamlChild, 0, 0, rect.right - rect.left, rect.bottom - rect.top, TRUE);
+            SetWindowPos(
+                m_xamlChild,
+                nullptr,
+                0,
+                0,
+                rect.right - rect.left,
+                rect.bottom - rect.top,
+                SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
         }
     }
 

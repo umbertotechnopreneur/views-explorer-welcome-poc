@@ -12,6 +12,7 @@ const string defaultCorrelationId = "broker";
 var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 var collector = new SnapshotCollector();
 var preferencesStore = new PreferencesStore();
+var snapshotCache = new SnapshotCache();
 
 Console.WriteLine($"ExplorerWelcome.Broker listening on {PipeProtocol.PipeName}");
 
@@ -65,15 +66,16 @@ while (true)
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(1_500));
                 var snapshot = await collector.CollectAsync(preferencesStore.Load(), timeout.Token);
+                snapshotCache.TrySave(snapshot);
                 await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "snapshot.response", correlationId, Snapshot: snapshot));
             }
             catch (OperationCanceledException)
             {
-                await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "snapshot.stale", correlationId, Error: "Snapshot collection timed out."));
+                await WriteStaleOrErrorAsync("Snapshot collection timed out.");
             }
             catch (Exception)
             {
-                await WriteAsync(new PipeResponse(PipeProtocol.CurrentVersion, "snapshot.error", correlationId, Error: "Snapshot collection failed."));
+                await WriteStaleOrErrorAsync("Snapshot collection failed.");
             }
             break;
 
@@ -103,6 +105,38 @@ while (true)
     async Task WriteAsync(PipeResponse response)
     {
         await writer.WriteLineAsync(JsonSerializer.Serialize(response, json));
+    }
+
+    async Task WriteStaleOrErrorAsync(string error)
+    {
+        if (snapshotCache.TryLoad(out var cached))
+        {
+            var stale = cached with
+            {
+                Freshness = cached.Freshness with
+                {
+                    BrokerAvailable = true,
+                    IsStale = true,
+                    SectionErrors = new Dictionary<string, string>(cached.Freshness.SectionErrors)
+                    {
+                        ["snapshot"] = error
+                    }
+                }
+            };
+            await WriteAsync(new PipeResponse(
+                PipeProtocol.CurrentVersion,
+                "snapshot.response",
+                correlationId,
+                Snapshot: stale,
+                Error: error));
+            return;
+        }
+
+        await WriteAsync(new PipeResponse(
+            PipeProtocol.CurrentVersion,
+            "snapshot.error",
+            correlationId,
+            Error: error));
     }
 }
 
