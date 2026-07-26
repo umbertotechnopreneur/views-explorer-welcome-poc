@@ -11,6 +11,14 @@ Extension experiment is opt-in and loads only the thin shell boundary into
 
 The repository's Windows CI builds the managed projects and the native host for both x64 and ARM64, then runs a redacted working-tree secret scan.
 
+## Official product specification
+
+The product, interaction, Explorer-integration, data, security, and validation
+baseline is documented in
+[Explorer Home V2](docs/explorer-home-v2/SPECIFICATION.md). That folder contains
+the single approved visual mockup; earlier design explorations are intentionally
+excluded.
+
 ## Recommended Explorer integration path
 
 For a real new entry under `This PC`, the compatible Shell model is a minimal

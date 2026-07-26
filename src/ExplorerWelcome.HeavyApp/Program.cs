@@ -18,7 +18,7 @@ await using var writer = new StreamWriter(client) { AutoFlush = true };
 var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 
 await writer.WriteLineAsync(JsonSerializer.Serialize(
-    new PipeRequest(PipeProtocol.CurrentVersion, "snapshot.request"), json));
+    new PipeRequest(PipeProtocol.CurrentVersion, PipeProtocol.SnapshotRequest, Guid.NewGuid().ToString("N")), json));
 
 var line = await reader.ReadLineAsync();
 var response = line is null ? null : JsonSerializer.Deserialize<PipeResponse>(line, json);
@@ -29,6 +29,8 @@ if (response?.Snapshot is null)
 }
 
 Console.WriteLine(response.Snapshot.Title);
-Console.WriteLine(response.Snapshot.Subtitle);
-Console.WriteLine($"Drives: {response.Snapshot.Drives.Count}");
+Console.WriteLine($"Machine: {response.Snapshot.Machine.Name}");
+Console.WriteLine($"Storage: {response.Snapshot.Storage.Count}");
+Console.WriteLine($"Recent: {response.Snapshot.RecentItems.Count}");
+Console.WriteLine($"Tools: {response.Snapshot.Tools.Count}");
 return 0;

@@ -8,6 +8,14 @@
 - [x] Decide that the next Explorer experiment is a native COM Namespace Extension; do not add context-menu handlers.
 - [x] Prototype a real Explorer-hosted boundary after stabilizing the standalone XAML Island host.
 - [x] Implement a minimal native COM Namespace Extension DLL before using `scripts/register-explorer-component.ps1`.
+- [x] Record the official Explorer Home V2 product and technical specification.
+- [x] Evolve the named-pipe contract to explicit Explorer Home V2 section models.
+- [x] Add bounded broker collectors for machine identity, metrics, storage, network locations, recent items, tools, terminals, quick settings, and preferences.
+- [ ] Validate a supported Windows-backed Quick Access/Favorites enumeration path.
+- [ ] Implement the official V2 visual shell in the standalone host and Namespace Extension.
+- [ ] Add asynchronous snapshot refresh and offline/stale UI states to the native view.
+- [ ] Add validated terminal, folder, and settings action requests from the native view.
+- [ ] Validate whether a public API can guarantee opening a folder in a new Explorer tab.
 - [ ] Add manifest/MSIX registration after the per-user prototype is proven.
 
 ## Completed
@@ -26,3 +34,5 @@
 - Broker + HeavyApp named-pipe snapshot — passed locally.
 - `pwsh -NoProfile -File .\scripts\secret-scan.ps1` — no likely secret patterns.
 - GitHub Actions run `30212826308` — passed managed, native x64, native ARM64, and secret scan.
+- Explorer Home V2 specification and single official mockup added under `docs/explorer-home-v2/`.
+- V2 broker/HeavyApp smoke test returned machine, storage, recent-item, and tool counts.

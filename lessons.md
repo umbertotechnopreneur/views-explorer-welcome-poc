@@ -7,3 +7,4 @@
 - A real Explorer Namespace Extension is a separate deployment and lifetime experiment, not an implicit consequence of the standalone host.
 - Explorer loads a Namespace Extension as an in-process COM DLL, so the registration scaffold is deliberately per-user, `Apartment` threaded, reversible, and refuses the current host EXE.
 - The first real shell boundary can stay small: `IShellFolder`/`IShellView` plus a system-themed XAML Island, with no context-menu interfaces and no heavy data work in Explorer.
+- Versioned section models let the native view render partial, stale, or unavailable data without coupling Explorer callbacks to system discovery.

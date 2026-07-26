@@ -13,3 +13,10 @@ Completed work is recorded here with date and validation evidence. Open work sta
 - Added `ExplorerWelcome.NamespaceExtension`, a native COM DLL implementing the minimal `IShellFolder`/`IShellView` boundary with a system-themed XAML Island.
 - Explicitly excluded context-menu interfaces; slow work remains in the broker and HeavyApp.
 - x64/ARM64 builds, COM export inspection, and a per-user register/status/unregister cycle passed locally.
+
+## 2026-07-27 — Explorer Home V2 data foundation
+
+- Evolved the pipe protocol to version 2 with correlation IDs, bounded section models, freshness, preferences, and structured action results.
+- Added best-effort Windows collectors for machine identity, CPU/memory/network metrics, volumes, network drives, recent items, installed tools, terminal profiles, and documented `ms-settings:` links.
+- Added current-user recoverable preferences and safe broker validation for folder and Settings activation.
+- Broker + HeavyApp smoke test returned `Machine: WORKSTATION`, `Storage: 5`, `Recent: 5`, and `Tools: 7`.
