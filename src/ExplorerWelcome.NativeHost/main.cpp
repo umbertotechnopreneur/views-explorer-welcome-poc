@@ -11,6 +11,7 @@
 #endif
 
 #include <string>
+#include <string_view>
 
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
@@ -22,6 +23,8 @@
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.Foundation.Collections.h>
+
+#include "..\ExplorerWelcome.NativeUi\welcome_page.h"
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -36,7 +39,34 @@ HWND g_xamlChild{};
 DesktopWindowXamlSource g_xamlSource{ nullptr };
 WindowsXamlManager g_xamlManager{ nullptr };
 
-bool PingBroker()
+std::string EscapeJson(std::wstring_view value)
+{
+    std::string escaped;
+    for (const wchar_t character : value)
+    {
+        switch (character)
+        {
+        case L'\\': escaped += "\\\\"; break;
+        case L'"': escaped += "\\\""; break;
+        case L'\r': escaped += "\\r"; break;
+        case L'\n': escaped += "\\n"; break;
+        case L'\t': escaped += "\\t"; break;
+        default:
+            if (character >= 0x20 && character <= 0x7e)
+            {
+                escaped.push_back(static_cast<char>(character));
+            }
+            else
+            {
+                escaped += "?";
+            }
+            break;
+        }
+    }
+    return escaped;
+}
+
+bool SendBrokerRequest(std::string const& request, std::string& response)
 {
     HANDLE pipe = CreateFileW(
         LR"(\\.\pipe\views-explorer-welcome-poc)",
@@ -52,16 +82,37 @@ bool PingBroker()
         return false;
     }
 
-    constexpr char request[] = R"({"version":1,"type":"host.ping"})" "\n";
+    const std::string line = request + "\n";
     DWORD written{};
-    const bool sent = WriteFile(pipe, request, static_cast<DWORD>(sizeof(request) - 1), &written, nullptr) != FALSE;
+    const bool sent = WriteFile(pipe, line.data(), static_cast<DWORD>(line.size()), &written, nullptr) != FALSE;
 
-    char response[512]{};
+    char responseBuffer[4096]{};
     DWORD read{};
-    const bool received = sent && ReadFile(pipe, response, sizeof(response) - 1, &read, nullptr) != FALSE;
+    const bool received = sent && ReadFile(pipe, responseBuffer, sizeof(responseBuffer) - 1, &read, nullptr) != FALSE;
     CloseHandle(pipe);
 
-    return received && std::string(response, read).find("host.pong") != std::string::npos;
+    if (received)
+    {
+        response.assign(responseBuffer, read);
+    }
+    return received;
+}
+
+bool PingBroker()
+{
+    std::string response;
+    return SendBrokerRequest(
+        R"({"version":2,"type":"host.ping","correlationId":"native-host-ping"})",
+        response) && response.find("host.pong") != std::string::npos;
+}
+
+void LaunchBrokerAction(std::wstring const& action, std::wstring const& target)
+{
+    const std::string request =
+        "{\"version\":2,\"type\":\"action.request\",\"correlationId\":\"native-host-action\",\"action\":\"" +
+        EscapeJson(action) + "\",\"target\":\"" + EscapeJson(target) + "\"}";
+    std::string ignored;
+    SendBrokerRequest(request, ignored);
 }
 
 UIElement BuildWelcomeContent()
@@ -179,7 +230,12 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand)
         auto interop = g_xamlSource.as<IDesktopWindowXamlSourceNative>();
         winrt::check_hresult(interop->AttachToWindow(window));
         winrt::check_hresult(interop->get_WindowHandle(&g_xamlChild));
-        g_xamlSource.Content(BuildWelcomeContent());
+        g_xamlSource.Content(ExplorerWelcome::NativeUi::BuildWelcomePage(
+            PingBroker,
+            [](std::wstring const& action, std::wstring const& target)
+            {
+                LaunchBrokerAction(action, target);
+            }));
 
         ShowWindow(window, showCommand);
         UpdateWindow(window);

@@ -20,3 +20,10 @@ Completed work is recorded here with date and validation evidence. Open work sta
 - Added best-effort Windows collectors for machine identity, CPU/memory/network metrics, volumes, network drives, recent items, installed tools, terminal profiles, and documented `ms-settings:` links.
 - Added current-user recoverable preferences and safe broker validation for folder and Settings activation.
 - Broker + HeavyApp smoke test returned `Machine: WORKSTATION`, `Storage: 5`, `Recent: 5`, and `Tools: 7`.
+
+## 2026-07-27 — Explorer Home V2 visual shell
+
+- Added the shared C++/WinRT XAML visual shell to both the standalone native host and the Namespace Extension view.
+- Added wallpaper-aware hero fallback, resource cards, storage cards, network/recent/highlighted/terminal sections, quick Settings links, and bounded button actions.
+- Native buttons now send protocol-v2 action requests through the current-user named pipe; no context-menu interfaces were added.
+- x64 and ARM64 Release builds passed, followed by the broker + HeavyApp snapshot smoke test.
