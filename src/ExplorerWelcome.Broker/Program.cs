@@ -2,7 +2,6 @@
 // Views Explorer Welcome POC
 // Out-of-process, current-user-only named-pipe broker for Explorer Home V2.
 // -----------------------------------------------------------------------------
-using System.Diagnostics;
 using System.IO.Pipes;
 using System.Text.Json;
 using ExplorerWelcome.Broker;
@@ -80,7 +79,7 @@ while (true)
             break;
 
         case PipeProtocol.ActionRequest:
-            var action = ActionLauncher.TryLaunch(request);
+            var action = ActionLauncher.TryLaunch(request, preferencesStore.Load());
             await WriteAsync(new PipeResponse(
                 PipeProtocol.CurrentVersion,
                 action.Accepted ? "action.accepted" : "action.rejected",
@@ -173,63 +172,4 @@ static ActionResult TryUpdatePreferences(PipeRequest request, PreferencesStore s
     return store.TrySave(updated, out var error)
         ? new ActionResult(true, PipeProtocol.PreferencesRequest, "Preferences saved.")
         : new ActionResult(false, PipeProtocol.PreferencesRequest, error);
-}
-
-internal static class ActionLauncher
-{
-    public static ActionResult TryLaunch(PipeRequest request)
-    {
-        if (string.IsNullOrWhiteSpace(request.Action))
-        {
-            return new ActionResult(false, "unknown", "Action is required.");
-        }
-
-        return request.Action switch
-        {
-            "settings.open" => LaunchSettings(request.Target),
-            "folder.open" => LaunchFolder(request.Target),
-            _ => new ActionResult(false, request.Action, "Unsupported action.")
-        };
-    }
-
-    private static ActionResult LaunchSettings(string? target)
-    {
-        if (string.IsNullOrWhiteSpace(target) || !target.StartsWith("ms-settings:", StringComparison.OrdinalIgnoreCase) || target.Length > 256)
-        {
-            return new ActionResult(false, "settings.open", "Only documented ms-settings URIs are accepted.");
-        }
-
-        try
-        {
-            Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
-            return new ActionResult(true, "settings.open");
-        }
-        catch
-        {
-            return new ActionResult(false, "settings.open", "Settings activation failed.");
-        }
-    }
-
-    private static ActionResult LaunchFolder(string? target)
-    {
-        if (string.IsNullOrWhiteSpace(target) || target.Length > 4_096 || target.Contains('\0'))
-        {
-            return new ActionResult(false, "folder.open", "Folder target is invalid.");
-        }
-
-        try
-        {
-            var start = new ProcessStartInfo("explorer.exe")
-            {
-                UseShellExecute = false
-            };
-            start.ArgumentList.Add(target);
-            Process.Start(start);
-            return new ActionResult(true, "folder.open");
-        }
-        catch
-        {
-            return new ActionResult(false, "folder.open", "Explorer activation failed.");
-        }
-    }
 }

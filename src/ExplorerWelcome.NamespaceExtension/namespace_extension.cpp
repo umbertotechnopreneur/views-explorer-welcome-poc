@@ -246,8 +246,12 @@ public:
             winrt::check_hresult(interop->get_WindowHandle(&m_xamlChild));
             m_xamlSource.Content(ExplorerWelcome::NativeUi::BuildWelcomePage(
                 ExplorerWelcome::NativeUi::BrokerClient::Ping,
-                [](std::wstring const& action, std::wstring const& target)
+                [this](std::wstring const& action, std::wstring const& target)
                 {
+                    if (action == L"folder.open" && NavigateFolderInCurrentView(target))
+                    {
+                        return;
+                    }
                     ExplorerWelcome::NativeUi::BrokerClient::LaunchActionAsync(action, target);
                 },
                 {},
@@ -336,6 +340,38 @@ private:
                 rect.bottom - rect.top,
                 SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
         }
+    }
+
+    bool NavigateFolderInCurrentView(std::wstring const& target)
+    {
+        if (!m_browser || target.empty() || target.size() > 4096 || target.find(L'\0') != std::wstring::npos)
+        {
+            return false;
+        }
+
+        PIDLIST_ABSOLUTE item{};
+        SFGAOF attributes = SFGAO_FOLDER;
+        const HRESULT parseResult = SHParseDisplayName(
+            target.c_str(),
+            nullptr,
+            &item,
+            SFGAO_FOLDER,
+            &attributes);
+        if (FAILED(parseResult) || !item || (attributes & SFGAO_FOLDER) == 0)
+        {
+            if (item)
+            {
+                CoTaskMemFree(item);
+            }
+            return false;
+        }
+
+        // IShellBrowser is the documented public route for same-view navigation.
+        const HRESULT browseResult = m_browser->BrowseObject(
+            item,
+            SBSP_ABSOLUTE | SBSP_SAMEBROWSER);
+        CoTaskMemFree(item);
+        return SUCCEEDED(browseResult);
     }
 
     void CloseXaml()

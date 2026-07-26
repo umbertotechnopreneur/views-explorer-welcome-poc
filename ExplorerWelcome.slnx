@@ -6,4 +6,7 @@
     <Project Path="src/ExplorerWelcome.NativeHost/ExplorerWelcome.NativeHost.vcxproj" />
     <Project Path="src/ExplorerWelcome.NamespaceExtension/ExplorerWelcome.NamespaceExtension.vcxproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ExplorerWelcome.Broker.Tests/ExplorerWelcome.Broker.Tests.csproj" />
+  </Folder>
 </Solution>

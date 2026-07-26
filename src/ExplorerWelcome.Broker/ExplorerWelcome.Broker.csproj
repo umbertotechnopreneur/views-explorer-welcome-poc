@@ -9,4 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ExplorerWelcome.Contracts\ExplorerWelcome.Contracts.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExplorerWelcome.Broker.Tests" />
+  </ItemGroup>
 </Project>

@@ -752,20 +752,25 @@ V2 is accepted when:
   integration behind.
 - The official mockup is the only design image in this specification folder.
 
-## 21. Open feasibility gates
+## 21. Feasibility-gate results
 
-Two requirements remain deliberately unresolved:
+The two public-API gates have been investigated and are closed for this POC:
 
-1. **Windows-native pins.** Prove a supported Shell enumeration and mutation
-   path for the same pins/favorites shown by Windows Explorer. If this cannot be
-   proven, do not ship a private replacement under the same label.
-2. **New Explorer tab.** Prove a supported public navigation mechanism that
-   guarantees a new tab on the supported Windows builds. Until then, same-tab,
-   follow-Windows, and new-window behavior are the supportable choices.
+1. **Windows-native pins: not exposed by a proven public enumeration contract.**
+   The documented Known Folder catalog exposes `FOLDERID_Recent` and many Shell
+   locations, but it does not expose a `FOLDERID_QuickAccess` or an API for
+   enumerating the exact pins shown by Explorer. V2 therefore keeps the section
+   explicitly unavailable and does not read private registry values,
+   `AutomaticDestinations`, or `CustomDestinations`.
+2. **New Explorer tab: not guaranteed by the public Shell browser contract.**
+   `IShellBrowser::BrowseObject` documents same-browser and new-browser-window
+   navigation, but no flag that guarantees creation of a new Explorer tab. V2
+   implements `SBSP_SAMEBROWSER` for same-tab navigation and the external
+   `explorer.exe` adapter for a supported new-window fallback. It does not show
+   a new-tab command.
 
-These gates must be resolved with a focused prototype and documented runtime
-evidence, not by relying on private registry data, private command IDs, or
-undocumented destination files.
+These results may be reopened only if Microsoft publishes a supported contract
+that can be validated on the supported Windows compatibility matrix.
 
 ## 22. Decision record
 
@@ -777,6 +782,9 @@ undocumented destination files.
 | Launch and control Windows Terminal externally | Accepted | Supported `wt.exe` command-line surface |
 | AI prompt and quick actions | Removed from V2 | Distracts from storage, network, recent, pins, and tools |
 | Duplicate app-managed pins | Rejected | Windows remains the source of truth |
+| Enumerate Explorer Quick Access pins | Unavailable | No proven public Windows contract exposes the exact built-in pin set |
+| Open a guaranteed new Explorer tab | Unavailable | Public `IShellBrowser` flags cover same browser and new browser window, not a guaranteed tab |
+| Same-tab folder navigation | Accepted | `IShellBrowser::BrowseObject` with `SBSP_SAMEBROWSER` |
 | Contextual installed-tool discovery | Accepted | Useful, personalized, and avoids irrelevant fixed menus |
 | Moving hover animation | Rejected | Stationary interaction requirement |
 | Public-package context menu | Deferred | Requires a separate packaged `IExplorerCommand` phase |

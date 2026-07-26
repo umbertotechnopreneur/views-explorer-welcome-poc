@@ -11,11 +11,17 @@
 - [x] Record the official Explorer Home V2 product and technical specification.
 - [x] Evolve the named-pipe contract to explicit Explorer Home V2 section models.
 - [x] Add bounded broker collectors for machine identity, metrics, storage, network locations, recent items, tools, terminals, quick settings, and preferences.
-- [ ] Validate a supported Windows-backed Quick Access/Favorites enumeration path.
+- [x] Close the Windows-backed Quick Access/Favorites gate: no proven public
+  enumeration contract; keep the section explicitly unavailable.
 - [x] Implement the official V2 visual shell in the standalone host and Namespace Extension.
 - [x] Add asynchronous snapshot refresh and offline/stale UI states to the native view.
 - [x] Add validated folder and settings action requests from the native view; terminal launch remains catalog-only.
-- [ ] Validate whether a public API can guarantee opening a folder in a new Explorer tab.
+- [x] Close the new-Explorer-tab gate: no documented public flag guarantees a
+  tab; retain supported same-view and new-window behaviors.
+- [x] Implement same-view folder navigation with `IShellBrowser::BrowseObject`.
+- [x] Add exact-ID, out-of-process adapters for recent items, Settings, and
+  terminal profiles.
+- [x] Add negative action-policy tests for command and target injection.
 - [ ] Add manifest/MSIX registration after the per-user prototype is proven.
 
 ## Completed

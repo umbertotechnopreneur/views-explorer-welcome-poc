@@ -30,6 +30,10 @@ jobs:
           pwsh -NoProfile -Command "dotnet build .\src\ExplorerWelcome.Broker\ExplorerWelcome.Broker.csproj --nologo --configuration Release"
           pwsh -NoProfile -Command "dotnet build .\src\ExplorerWelcome.HeavyApp\ExplorerWelcome.HeavyApp.csproj --nologo --configuration Release"
 
+      - name: Test broker action policy
+        shell: pwsh
+        run: pwsh -NoProfile -Command "dotnet test .\tests\ExplorerWelcome.Broker.Tests\ExplorerWelcome.Broker.Tests.csproj --nologo --configuration Release"
+
       - name: Build native x64
         shell: pwsh
         run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture x64 -Configuration Release -PlatformToolset v145

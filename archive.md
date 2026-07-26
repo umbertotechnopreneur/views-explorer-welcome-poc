@@ -33,3 +33,25 @@ Completed work is recorded here with date and validation evidence. Open work sta
 - Added a non-blocking snapshot refresh callback shared by the standalone host and Namespace Extension.
 - Broker work runs outside the XAML/Explorer callback thread and reports updated, stale, or offline state back through the XAML dispatcher.
 - Native refresh requests use protocol-v2 correlation IDs and preserve cached visual content when the broker is unavailable.
+
+## 2026-07-27 — Explorer Home V2 live dashboard
+
+- Bound the native XAML view to real broker snapshots for machine identity,
+  wallpaper, metrics, volumes, network locations, recent items, terminals, and
+  Settings.
+- Added a bounded current-user snapshot cache with stale/offline rendering.
+- Confirmed the dashboard visually with the native host; x64 and ARM64 Debug
+  builds passed with no native warnings or errors.
+- Unknown disk health is labelled `Stato sconosciuto`, never healthy.
+
+## 2026-07-27 — Supported navigation and action boundary
+
+- Added same-view folder navigation through
+  `IShellBrowser::BrowseObject(SBSP_SAMEBROWSER)`.
+- Added out-of-process, exact-ID adapters for recent items, documented Settings
+  targets, folders, and terminal profiles; PowerShell always starts with
+  `-NoProfile`.
+- Closed the Quick Access pin and guaranteed-new-tab gates as unavailable under
+  the currently documented public Windows contracts.
+- Ten broker action-policy tests pass, including command and target injection
+  rejection cases.
