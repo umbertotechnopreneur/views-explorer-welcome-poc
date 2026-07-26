@@ -1,0 +1,43 @@
+name: Build and scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build managed projects
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -Command "dotnet build .\src\ExplorerWelcome.Contracts\ExplorerWelcome.Contracts.csproj --nologo --configuration Release"
+          pwsh -NoProfile -Command "dotnet build .\src\ExplorerWelcome.Broker\ExplorerWelcome.Broker.csproj --nologo --configuration Release"
+          pwsh -NoProfile -Command "dotnet build .\src\ExplorerWelcome.HeavyApp\ExplorerWelcome.HeavyApp.csproj --nologo --configuration Release"
+
+      - name: Build native x64
+        shell: pwsh
+        run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture x64 -Configuration Release
+
+      - name: Build native ARM64
+        shell: pwsh
+        run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture ARM64 -Configuration Release
+
+      - name: Secret-pattern scan
+        shell: pwsh
+        run: pwsh -NoProfile -File .\scripts\secret-scan.ps1
