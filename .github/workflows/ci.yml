@@ -32,11 +32,11 @@ jobs:
 
       - name: Build native x64
         shell: pwsh
-        run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture x64 -Configuration Release -PlatformToolset v143
+        run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture x64 -Configuration Release -PlatformToolset v180
 
       - name: Build native ARM64
         shell: pwsh
-        run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture ARM64 -Configuration Release -PlatformToolset v143
+        run: pwsh -NoProfile -File .\scripts\build.ps1 -Architecture ARM64 -Configuration Release -PlatformToolset v180
 
       - name: Secret-pattern scan
         shell: pwsh
