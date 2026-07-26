@@ -24,8 +24,8 @@ Always inspect the planned change first:
 ```powershell
 pwsh -NoProfile -File .\scripts\register-explorer-component.ps1 `
   -Action Register `
-  -Clsid '{00000000-0000-0000-0000-000000000000}' `
-  -ServerPath 'C:\path\to\ExplorerWelcome.NamespaceExtension.dll' `
+  -Clsid '{a714cffa-a7b2-49fd-9f15-e42b1aefbca5}' `
+  -ServerPath '.\src\ExplorerWelcome.NamespaceExtension\out\x64\Release\ExplorerWelcome.NamespaceExtension.dll' `
   -WhatIf
 ```
 

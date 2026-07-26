@@ -22,19 +22,18 @@ only when a real Namespace Extension DLL exists. The script is per-user,
 reversible, refuses `.exe` files, and refreshes the Shell association cache.
 
 For production packaging, prefer manifest-based COM registration in an MSIX or
-sparse package. If the desired surface is only a context-menu action, use a
-packaged `IExplorerCommand` instead; it is not a replacement for a custom
-`This PC` folder view.
+sparse package. The project intentionally does not expose context-menu
+handlers; the only target surface is the dedicated `This PC` folder view.
 
 ## Architecture
 
 ```text
 future Explorer Shell / Namespace bridge
-        │  lightweight native host boundary
+        │  lightweight native shell boundary
         ▼
-ExplorerWelcome.NativeHost  ───── named pipe ─────►  ExplorerWelcome.Broker
+ExplorerWelcome.NamespaceExtension ─── named pipe ─►  ExplorerWelcome.Broker
         │                                             │
-        │  Win32 + DesktopWindowXamlSource            │  slow snapshots / orchestration
+        │  COM folder + DesktopWindowXamlSource       │  slow snapshots / orchestration
         │  system XAML controls + Default theme       │
         ▼                                             ▼
      shell-facing surface                     ExplorerWelcome.HeavyApp
@@ -49,6 +48,7 @@ The native host uses the system XAML Island API and leaves the root XAML element
 - `ExplorerWelcome.Broker` — out-of-process .NET 10 named-pipe server.
 - `ExplorerWelcome.HeavyApp` — separate .NET client smoke test and future heavy-app seam.
 - `ExplorerWelcome.NativeHost` — native x64/ARM64 Win32 host with `DesktopWindowXamlSource` and a compact themed welcome card.
+- `ExplorerWelcome.NamespaceExtension` — native x64/ARM64 COM DLL with an Explorer `IShellFolder`/`IShellView` boundary and no context-menu implementation.
 
 ## Build
 
@@ -80,9 +80,8 @@ Then launch the native host from Visual Studio or the architecture-specific outp
 
 ## What this POC does not prove yet
 
-- Explorer Namespace Extension registration and deployment.
 - Safe lifetime behavior inside a real Explorer process.
-- Package identity, MSIX deployment, or Windows App SDK bootstrap policy.
+- Package identity, MSIX deployment, or manifest-based COM registration.
 - Production accessibility, signing, telemetry, search/indexing, or enterprise servicing.
 
 Those are explicit next experiments after the host and pipe contract are stable.

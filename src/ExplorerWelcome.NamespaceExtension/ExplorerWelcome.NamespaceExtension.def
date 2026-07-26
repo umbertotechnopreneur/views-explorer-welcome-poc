@@ -1,0 +1,4 @@
+LIBRARY "ExplorerWelcome.NamespaceExtension.dll"
+EXPORTS
+    DllCanUnloadNow PRIVATE
+    DllGetClassObject PRIVATE

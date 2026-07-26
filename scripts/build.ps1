@@ -33,6 +33,12 @@ foreach ($project in $projects) {
     if ($LASTEXITCODE -ne 0) { throw "dotnet build failed: $project" }
 }
 
-$native = Join-Path $root 'src\ExplorerWelcome.NativeHost\ExplorerWelcome.NativeHost.vcxproj'
-& $msbuild $native "/p:Configuration=$Configuration" "/p:Platform=$Architecture" "/p:PlatformToolset=$PlatformToolset" /m /nologo
-if ($LASTEXITCODE -ne 0) { throw "Native build failed for $Architecture" }
+$nativeProjects = @(
+    'src\ExplorerWelcome.NativeHost\ExplorerWelcome.NativeHost.vcxproj',
+    'src\ExplorerWelcome.NamespaceExtension\ExplorerWelcome.NamespaceExtension.vcxproj'
+)
+foreach ($nativeProject in $nativeProjects) {
+    $projectPath = Join-Path $root $nativeProject
+    & $msbuild $projectPath "/p:Configuration=$Configuration" "/p:Platform=$Architecture" "/p:PlatformToolset=$PlatformToolset" /m /nologo
+    if ($LASTEXITCODE -ne 0) { throw "Native build failed for $Architecture`: $nativeProject" }
+}

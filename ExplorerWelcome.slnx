@@ -4,5 +4,6 @@
     <Project Path="src/ExplorerWelcome.Contracts/ExplorerWelcome.Contracts.csproj" />
     <Project Path="src/ExplorerWelcome.HeavyApp/ExplorerWelcome.HeavyApp.csproj" />
     <Project Path="src/ExplorerWelcome.NativeHost/ExplorerWelcome.NativeHost.vcxproj" />
+    <Project Path="src/ExplorerWelcome.NamespaceExtension/ExplorerWelcome.NamespaceExtension.vcxproj" />
   </Folder>
 </Solution>
