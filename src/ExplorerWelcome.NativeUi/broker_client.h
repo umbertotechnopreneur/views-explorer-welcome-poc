@@ -171,6 +171,21 @@ inline bool RequestSnapshot(NativeSnapshot& snapshot, std::wstring& summary)
     return ParseSnapshotResponse(response, snapshot, summary);
 }
 
+// Requests only the bounded live metrics used by the one-second hero refresh.
+inline bool RequestMetrics(NativeSnapshot& snapshot, std::wstring& summary)
+{
+    std::string response;
+    const std::string request =
+        "{\"version\":2,\"type\":\"metrics.request\",\"correlationId\":\"" +
+        CorrelationId() + "\"}";
+    if (!SendRequest(request, response))
+    {
+        summary = L"Metriche live non disponibili";
+        return false;
+    }
+    return ParseMetricsResponse(response, snapshot, summary);
+}
+
 inline NativeSnapshot LoadCachedSnapshot()
 {
     NativeSnapshot snapshot;

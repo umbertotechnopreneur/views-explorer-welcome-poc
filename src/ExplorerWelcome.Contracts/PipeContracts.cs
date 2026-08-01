@@ -20,6 +20,7 @@ public static class PipeProtocol
     public const int MaxLineLength = 64 * 1024;
     public const int MaxCollectionCount = 64;
     public const string SnapshotRequest = "snapshot.request";
+    public const string MetricsRequest = "metrics.request";
     public const string HostPingRequest = "host.ping";
     public const string ActionRequest = "action.request";
     public const string PreferencesRequest = "preferences.update";
@@ -39,7 +40,8 @@ public sealed record PipeResponse(
     string CorrelationId,
     WelcomePageSnapshot? Snapshot = null,
     ActionResult? ActionResult = null,
-    string? Error = null);
+    string? Error = null,
+    MetricsSnapshot? Metrics = null);
 
 public sealed record ActionResult(
     bool Accepted,

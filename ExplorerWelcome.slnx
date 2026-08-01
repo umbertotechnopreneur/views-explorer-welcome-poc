@@ -1,12 +1,24 @@
 <Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+  </Configurations>
   <Folder Name="/src/">
-    <Project Path="src/ExplorerWelcome.Broker/ExplorerWelcome.Broker.csproj" />
-    <Project Path="src/ExplorerWelcome.Contracts/ExplorerWelcome.Contracts.csproj" />
-    <Project Path="src/ExplorerWelcome.HeavyApp/ExplorerWelcome.HeavyApp.csproj" />
-    <Project Path="src/ExplorerWelcome.NativeHost/ExplorerWelcome.NativeHost.vcxproj" />
-    <Project Path="src/ExplorerWelcome.NamespaceExtension/ExplorerWelcome.NamespaceExtension.vcxproj" />
+    <Project Path="src/ExplorerWelcome.Broker/ExplorerWelcome.Broker.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="src/ExplorerWelcome.Contracts/ExplorerWelcome.Contracts.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="src/ExplorerWelcome.HeavyApp/ExplorerWelcome.HeavyApp.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Project Path="src/ExplorerWelcome.NamespaceExtension/ExplorerWelcome.NamespaceExtension.vcxproj" Id="a6d1f4b3-6f4c-4ae1-8b04-4c0d7d942c0a" />
+    <Project Path="src/ExplorerWelcome.NativeHost/ExplorerWelcome.NativeHost.vcxproj" Id="6d5d6401-b7f6-4c6f-a5b4-5e7a6bb85c0c" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/ExplorerWelcome.Broker.Tests/ExplorerWelcome.Broker.Tests.csproj" />
+    <Project Path="tests/ExplorerWelcome.Broker.Tests/ExplorerWelcome.Broker.Tests.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
   </Folder>
 </Solution>

@@ -264,7 +264,8 @@ public:
                 },
                 {},
                 ExplorerWelcome::NativeUi::BrokerClient::RequestSnapshot,
-                ExplorerWelcome::NativeUi::BrokerClient::LoadCachedSnapshot()));
+                ExplorerWelcome::NativeUi::BrokerClient::LoadCachedSnapshot(),
+                ExplorerWelcome::NativeUi::BrokerClient::RequestMetrics));
             ResizeXamlChild();
         }
         catch (const winrt::hresult_error& error)

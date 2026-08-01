@@ -95,6 +95,36 @@ while (true)
                 }
                 break;
 
+            case PipeProtocol.MetricsRequest:
+                try
+                {
+                    // Live refreshes sample only fast counters and never touch the full snapshot cache.
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+                    var metrics = await collector.CollectMetricsAsync(timeout.Token);
+                    await WriteAsync(new PipeResponse(
+                        PipeProtocol.CurrentVersion,
+                        "metrics.response",
+                        correlationId,
+                        Metrics: metrics));
+                }
+                catch (OperationCanceledException)
+                {
+                    await WriteAsync(new PipeResponse(
+                        PipeProtocol.CurrentVersion,
+                        "metrics.error",
+                        correlationId,
+                        Error: "Metric collection timed out."));
+                }
+                catch (Exception)
+                {
+                    await WriteAsync(new PipeResponse(
+                        PipeProtocol.CurrentVersion,
+                        "metrics.error",
+                        correlationId,
+                        Error: "Metric collection failed."));
+                }
+                break;
+
             case PipeProtocol.ActionRequest:
                 var action = ActionLauncher.TryLaunch(request, preferencesStore.Load());
                 await WriteAsync(new PipeResponse(

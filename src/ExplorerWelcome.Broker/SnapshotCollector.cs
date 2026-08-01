@@ -29,18 +29,18 @@ public sealed class SnapshotCollector
     private readonly List<double> _cpuSamples = new();
     private readonly List<double> _networkSamples = new();
 
+    // Collects only live metrics so the UI can refresh without rebuilding the full welcome snapshot.
+    public Task<MetricsSnapshot> CollectMetricsAsync(CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        return CollectMetricsAsync(errors, cancellationToken);
+    }
+
+    // Builds the complete welcome snapshot while retaining metric collection errors in freshness details.
     public async Task<WelcomePageSnapshot> CollectAsync(PreferencesSnapshot preferences, CancellationToken cancellationToken)
     {
         var errors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var beforeCpu = ReadSystemTimes();
-        var beforeNetwork = ReadNetworkTotals();
-
-        // Keep the first sample bounded while giving the rate calculator a useful interval.
-        await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
-
-        var afterCpu = ReadSystemTimes();
-        var afterNetwork = ReadNetworkTotals();
-        var metrics = BuildMetrics(beforeCpu, afterCpu, beforeNetwork, afterNetwork, errors);
+        var metrics = await CollectMetricsAsync(errors, cancellationToken);
 
         var machine = CollectMachine(preferences, errors);
         var storage = CollectStorage(errors);
@@ -76,7 +76,9 @@ public sealed class SnapshotCollector
             errors.TryAdd("recentItems", "Windows did not expose any recent items.");
         }
 
-        errors.TryAdd("highlightedItems", "Supported Windows-backed pin enumeration is not proven; no private pin store is used.");
+        errors.TryAdd(
+            "highlightedItems",
+            "Elementi in evidenza non disponibili: l'enumerazione Windows supportata non è ancora implementata.");
 
         return new WelcomePageSnapshot
         {
@@ -100,6 +102,22 @@ public sealed class SnapshotCollector
                 SectionErrors = errors
             }
         };
+    }
+
+    // Samples CPU and network counters over one bounded interval and updates their real history.
+    private async Task<MetricsSnapshot> CollectMetricsAsync(
+        IDictionary<string, string> errors,
+        CancellationToken cancellationToken)
+    {
+        var beforeCpu = ReadSystemTimes();
+        var beforeNetwork = ReadNetworkTotals();
+
+        // Keep the first sample bounded while giving the rate calculator a useful interval.
+        await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
+
+        var afterCpu = ReadSystemTimes();
+        var afterNetwork = ReadNetworkTotals();
+        return BuildMetrics(beforeCpu, afterCpu, beforeNetwork, afterNetwork, errors);
     }
 
     private MetricsSnapshot BuildMetrics(
@@ -234,6 +252,7 @@ public sealed class SnapshotCollector
         return items;
     }
 
+    // Enumerates every mapped drive independently so one disconnected share cannot empty the section.
     private static IReadOnlyList<NetworkLocationSnapshot> CollectNetworkLocations(IDictionary<string, string> errors)
     {
         var locations = new List<NetworkLocationSnapshot>();
@@ -244,12 +263,15 @@ public sealed class SnapshotCollector
                 var ready = false;
                 long? free = null;
                 long? total = null;
+                string? label = null;
                 string? error = null;
+                var remotePath = ReadMappedNetworkPath(drive.Name);
                 try
                 {
                     ready = drive.IsReady;
                     if (ready)
                     {
+                        label = drive.VolumeLabel;
                         free = drive.AvailableFreeSpace;
                         total = drive.TotalSize;
                     }
@@ -263,7 +285,7 @@ public sealed class SnapshotCollector
                 {
                     Id = drive.Name,
                     Path = drive.Name,
-                    DisplayName = string.IsNullOrWhiteSpace(drive.VolumeLabel) ? drive.Name : drive.VolumeLabel,
+                    DisplayName = FormatNetworkDisplayName(drive.Name, label, remotePath),
                     State = ready ? "Connected" : "Unavailable",
                     FreeBytes = free,
                     TotalBytes = total,
@@ -279,6 +301,48 @@ public sealed class SnapshotCollector
         return locations;
     }
 
+    // Reads the public per-user mapping metadata even when Windows reports the share disconnected.
+    private static string? ReadMappedNetworkPath(string driveName)
+    {
+        if (string.IsNullOrWhiteSpace(driveName) || !char.IsAsciiLetter(driveName[0]))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey($@"Network\{char.ToUpperInvariant(driveName[0])}");
+            return key?.GetValue("RemotePath") as string;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            return null;
+        }
+    }
+
+    // Formats mapped shares as a readable share-and-host label without inventing connectivity.
+    private static string FormatNetworkDisplayName(
+        string driveName,
+        string? volumeLabel,
+        string? remotePath)
+    {
+        if (string.IsNullOrWhiteSpace(remotePath))
+        {
+            return string.IsNullOrWhiteSpace(volumeLabel) ? driveName : volumeLabel;
+        }
+
+        var parts = remotePath
+            .Trim('\\')
+            .Split('\\', StringSplitOptions.RemoveEmptyEntries);
+        var displayName = string.IsNullOrWhiteSpace(volumeLabel)
+            ? parts.LastOrDefault() ?? driveName
+            : volumeLabel;
+        return parts.Length >= 2
+            ? $"{displayName} (\\\\{parts[0]})"
+            : displayName;
+    }
+
+    // Reads Windows' Recent shell links and keeps only live, unique targets.
     private static IReadOnlyList<RecentItemSnapshot> CollectRecentItems(IDictionary<string, string> errors)
     {
         try

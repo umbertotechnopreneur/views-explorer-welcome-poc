@@ -15,6 +15,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -77,6 +78,8 @@ struct NativeSnapshot
     std::optional<double> StoragePercent;
     std::optional<std::uint64_t> NetworkSendBytesPerSecond;
     std::optional<std::uint64_t> NetworkReceiveBytesPerSecond;
+    std::vector<double> CpuSparkline;
+    std::vector<double> NetworkSparkline;
     std::vector<NativeStorageItem> Storage;
     std::vector<NativeListItem> NetworkLocations;
     std::vector<NativeListItem> RecentItems;
@@ -171,8 +174,65 @@ inline JsonArray Array(JsonObject const& object, wchar_t const* name)
     }
     return nullptr;
 }
+
+// Reads one bounded series of finite samples from a broker JSON array.
+inline std::vector<double> NumberArray(
+    JsonObject const& object,
+    wchar_t const* name,
+    std::uint32_t maximumCount = 24)
+{
+    std::vector<double> result;
+    const auto values = Array(object, name);
+    if (!values)
+    {
+        return result;
+    }
+
+    const auto count = (std::min)(values.Size(), maximumCount);
+    result.reserve(count);
+    for (std::uint32_t index = 0; index < count; ++index)
+    {
+        const auto value = values.GetAt(index);
+        if (value.ValueType() == JsonValueType::Number)
+        {
+            const auto number = value.GetNumber();
+            if (std::isfinite(number))
+            {
+                result.push_back(number);
+            }
+        }
+    }
+    return result;
+}
 }
 
+// Projects the live metric fields shared by full and metrics-only broker responses.
+inline void ParseMetrics(
+    winrt::Windows::Data::Json::JsonObject const& metrics,
+    NativeSnapshot& parsed)
+{
+    parsed.CpuPercent = Json::Number(metrics, L"cpuPercent");
+    parsed.GpuPercent = Json::Number(metrics, L"gpuPercent");
+    parsed.MemoryPercent = Json::Number(metrics, L"memoryPercent");
+    parsed.StoragePercent = Json::Number(metrics, L"storagePercent");
+    parsed.NetworkSendBytesPerSecond = Json::Unsigned(metrics, L"networkSendBytesPerSecond");
+    parsed.NetworkReceiveBytesPerSecond = Json::Unsigned(metrics, L"networkReceiveBytesPerSecond");
+    parsed.CpuSparkline = Json::NumberArray(metrics, L"cpuSparkline");
+    parsed.NetworkSparkline = Json::NumberArray(metrics, L"networkSparkline");
+}
+
+// Reduces a full parent path to the compact folder label used by Explorer cards.
+inline std::wstring PathLeaf(std::wstring value)
+{
+    while (!value.empty() && (value.back() == L'\\' || value.back() == L'/'))
+    {
+        value.pop_back();
+    }
+    const auto separator = value.find_last_of(L"\\/");
+    return separator == std::wstring::npos ? value : value.substr(separator + 1);
+}
+
+// Parses a bounded full dashboard snapshot without trusting unbounded collections.
 inline bool ParseSnapshotResponse(
     std::string const& response,
     NativeSnapshot& result,
@@ -224,12 +284,7 @@ inline bool ParseSnapshotResponse(
         parsed.MemoryTotalBytes = Json::Unsigned(machine, L"memoryTotalBytes").value_or(0);
 
         const auto metrics = Json::Object(snapshot, L"metrics");
-        parsed.CpuPercent = Json::Number(metrics, L"cpuPercent");
-        parsed.GpuPercent = Json::Number(metrics, L"gpuPercent");
-        parsed.MemoryPercent = Json::Number(metrics, L"memoryPercent");
-        parsed.StoragePercent = Json::Number(metrics, L"storagePercent");
-        parsed.NetworkSendBytesPerSecond = Json::Unsigned(metrics, L"networkSendBytesPerSecond");
-        parsed.NetworkReceiveBytesPerSecond = Json::Unsigned(metrics, L"networkReceiveBytesPerSecond");
+        ParseMetrics(metrics, parsed);
 
         const auto storage = Json::Array(snapshot, L"storage");
         if (storage)
@@ -264,10 +319,15 @@ inline bool ParseSnapshotResponse(
             {
                 const auto item = network.GetObjectAt(index);
                 const auto state = Json::String(item, L"state", L"Unknown");
+                const auto stateLabel = state == L"Connected"
+                    ? std::wstring(L"Connesso")
+                    : state == L"Unavailable"
+                        ? std::wstring(L"Disconnesso")
+                        : std::wstring(L"Stato sconosciuto");
                 parsed.NetworkLocations.push_back(NativeListItem{
                     Json::String(item, L"id"),
                     Json::String(item, L"displayName", Json::String(item, L"path")),
-                    state,
+                    stateLabel,
                     Json::String(item, L"path"),
                     L"Network",
                     state == L"Connected"
@@ -286,7 +346,7 @@ inline bool ParseSnapshotResponse(
                 parsed.RecentItems.push_back(NativeListItem{
                     Json::String(item, L"id"),
                     Json::String(item, L"displayName"),
-                    Json::String(item, L"parent"),
+                    PathLeaf(Json::String(item, L"parent")),
                     Json::String(item, L"targetPath"),
                     Json::String(item, L"targetKind"),
                     Json::Boolean(item, L"isAvailable")
@@ -384,6 +444,50 @@ inline bool ParseSnapshotResponse(
     catch (winrt::hresult_error const&)
     {
         summary = L"Risposta broker malformata · dati locali mantenuti";
+        return false;
+    }
+}
+
+// Parses one lightweight response without replacing the slower dashboard sections.
+inline bool ParseMetricsResponse(
+    std::string const& response,
+    NativeSnapshot& result,
+    std::wstring& summary)
+{
+    using namespace winrt::Windows::Data::Json;
+
+    try
+    {
+        if (response.size() > 64 * 1024)
+        {
+            summary = L"Risposta metriche troppo grande";
+            return false;
+        }
+
+        const auto envelope = JsonObject::Parse(winrt::to_hstring(response));
+        if (Json::String(envelope, L"type") != L"metrics.response")
+        {
+            summary = L"Risposta metriche non valida";
+            return false;
+        }
+
+        const auto metrics = Json::Object(envelope, L"metrics");
+        if (!metrics)
+        {
+            summary = L"Metriche broker mancanti";
+            return false;
+        }
+
+        NativeSnapshot parsed;
+        parsed.IsLoaded = true;
+        ParseMetrics(metrics, parsed);
+        result = std::move(parsed);
+        summary = L"Metriche live aggiornate";
+        return true;
+    }
+    catch (winrt::hresult_error const&)
+    {
+        summary = L"Risposta metriche malformata";
         return false;
     }
 }

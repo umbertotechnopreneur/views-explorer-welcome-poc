@@ -22,6 +22,8 @@ This repository is a public feasibility study for a Windows 11-quality welcome p
 - Keep repository-owned C#, PowerShell, C, and C++ files compliant with the
   canonical source banner by running
   `pwsh -NoProfile -File .\scripts\manage-source-banners.ps1 -Action Verify -NoProgress`.
+- Add a short comment line before every new or changed method, and add one or
+  two practical comments inside non-obvious code blocks explaining what they do.
 - Keep pipe messages versioned, current-user-only, bounded, and explicit about unsupported requests.
 - Maintain x64 and ARM64 native configurations. Do not add an architecture fallback that hides a failed native build.
 - Run targeted build/smoke checks and update `todo.md`, `lessons.md`, or `archive.md` with evidence.

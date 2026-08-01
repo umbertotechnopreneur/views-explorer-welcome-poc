@@ -200,6 +200,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int showCo
                     {},
                     {},
                     {},
+                    {},
                     {}));
                 PumpPendingMessages();
                 g_xamlSource.Content(nullptr);
@@ -219,7 +220,8 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR commandLine, int showCo
             },
             {},
             ExplorerWelcome::NativeUi::BrokerClient::RequestSnapshot,
-            ExplorerWelcome::NativeUi::BrokerClient::LoadCachedSnapshot()));
+            ExplorerWelcome::NativeUi::BrokerClient::LoadCachedSnapshot(),
+            ExplorerWelcome::NativeUi::BrokerClient::RequestMetrics));
 
         ShowWindow(window, showCommand);
         UpdateWindow(window);
